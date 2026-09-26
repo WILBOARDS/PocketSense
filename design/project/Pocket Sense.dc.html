@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-ebab9f20-d6b9-4f67-a9a0-58abe38816eb/styles.css">
+<script src="_ds/modernist-ebab9f20-d6b9-4f67-a9a0-58abe38816eb/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+body{margin:0;background:var(--color-neutral-200);}
+a{color:var(--color-accent-700);}
+a:hover{color:var(--color-accent-800);}
+button{font-family:inherit;}
+</style>
+</helmet>
+<div style="min-height:100vh; box-sizing:border-box; display:flex; flex-wrap:wrap; gap:40px; align-items:flex-start; justify-content:center; padding:32px 16px; font-family:var(--font-body); color:var(--color-text); background:var(--color-neutral-200);">
+
+<div style="flex:none; zoom:{{ zoom }};">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="412px,892px">
+<div data-screen-label="{{ screenLabel }}" style="position:relative; height:100%; display:flex; flex-direction:column; background:var(--color-bg); color:var(--color-text); font-family:var(--font-body); overflow:hidden;">
+
+<div ref="{{ scrollRef }}" style="flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;">
+
+<sc-if value="{{ showState }}" hint-placeholder-val="{{ false }}">
+<div style="padding:24px 20px; display:flex; flex-direction:column; gap:16px; min-height:100%; box-sizing:border-box;">
+  <div style="font-size:18px; font-weight:800;">{{ stateScreenTitle }}</div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="display:flex; flex-direction:column; gap:12px; padding-top:48px;">
+    <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+      <div style="height:4px; background:var(--color-neutral-300); position:relative;"><div style="position:absolute; left:0; top:0; bottom:0; width:40%; background:var(--color-text);"></div></div>
+    </sc-if>
+    <div style="font-size:28px; font-weight:800; line-height:1.1; text-wrap:pretty;">{{ stateTitle }}</div>
+    <div style="font-size:15px; line-height:1.5; color:var(--color-neutral-700); text-wrap:pretty;">{{ stateBody }}</div>
+    <sc-if value="{{ stateAction }}" hint-placeholder-val="{{ false }}">
+      <button class="btn btn-primary" onClick="{{ onStateAction }}" style="min-height:48px; justify-content:flex-start; align-self:flex-start; padding:0 20px; font-size:15px;">{{ stateAction }}</button>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex; flex-direction:column;">
+  <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:16px 20px 12px;">
+    <div style="font-size:18px; font-weight:800;">Pocket Sense</div>
+    <div style="font-size:13px; color:var(--color-neutral-700);">Sat 26 Sep</div>
+  </div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="padding:20px 20px 24px; display:flex; flex-direction:column; gap:8px;">
+    <div style="font-size:13px; color:var(--color-neutral-700);">{{ leftLabel }}</div>
+    <div style="font-size:64px; font-weight:800; line-height:0.95; letter-spacing:-0.02em;">{{ leftStr }}</div>
+    <div style="font-size:13px; color:var(--color-neutral-700);">of {{ weekMoneyStr }} this week · Day 6 of 7</div>
+    <div style="height:8px; background:var(--color-neutral-300); position:relative; margin-top:8px;"><div style="position:absolute; left:0; top:0; bottom:0; width:{{ spentPct }}; background:var(--color-text);"></div></div>
+    <div style="font-size:14px; line-height:1.45; text-wrap:pretty;">{{ paceLine }}</div>
+  </div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="display:grid; grid-template-columns:112px minmax(0,1fr); gap:16px; padding:20px;">
+    <div style="position:relative; width:112px; height:112px;">
+      <div class="grayscale" style="position:absolute; inset:0;"><image-slot id="goal-photo" shape="rect" placeholder="Goal photo"></image-slot></div>
+      <div style="position:absolute; left:0; right:0; top:0; height:{{ goalCoverH }}; background:color-mix(in srgb, var(--color-bg) 70%, transparent); pointer-events:none;"></div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:6px; min-width:0;">
+      <div style="font-size:13px; color:var(--color-neutral-700);">Saving for</div>
+      <div style="font-size:20px; font-weight:800;">{{ goal.name }}</div>
+      <div style="font-size:14px;">{{ goalSavedStr }} of {{ goalTargetStr }}</div>
+      <div style="font-size:13px; color:var(--color-neutral-700);">{{ goalEta }}</div>
+      <button class="btn btn-ghost" onClick="{{ goGoals }}" style="min-height:44px; align-self:flex-start; justify-content:flex-start; padding:0 4px; font-size:14px; color:var(--color-accent-700);">Open goal</button>
+    </div>
+  </div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px; padding:16px 20px;">
+    <button class="btn btn-secondary" onClick="{{ goThinking }}" style="min-height:64px; justify-content:flex-start; text-align:left; padding:10px 12px; font-size:14px; font-weight:600; flex-direction:column; align-items:flex-start; gap:2px;"><span>Thinking of buying…</span><span style="font-size:12px; font-weight:400; color:var(--color-neutral-700);">Check it first</span></button>
+    <button class="btn btn-secondary" onClick="{{ goParking }}" style="min-height:64px; justify-content:flex-start; text-align:left; padding:10px 12px; font-size:14px; font-weight:600; flex-direction:column; align-items:flex-start; gap:2px;"><span>Parking lot</span><span style="font-size:12px; font-weight:400; color:var(--color-neutral-700);">{{ parkingSummary }}</span></button>
+  </div>
+  <sc-if value="{{ lookbackPending }}" hint-placeholder-val="{{ true }}">
+  <div style="margin:0 20px 16px; padding:14px 16px; background:var(--color-surface); display:flex; align-items:center; gap:12px;">
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:12px; color:var(--color-accent-700); font-weight:600;">1 check-in waiting</div>
+      <div style="font-size:15px; font-weight:600;">Was the denim jacket worth it?</div>
+    </div>
+    <button class="btn btn-primary" onClick="{{ goLookback }}" style="min-height:44px; padding:0 16px; font-size:14px;">Answer</button>
+  </div>
+  </sc-if>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="display:flex; align-items:baseline; justify-content:space-between; padding:16px 20px 8px;">
+    <div style="font-size:16px; font-weight:800;">Today</div>
+    <div style="font-size:14px; color:var(--color-neutral-700);">{{ todayTotalStr }}</div>
+  </div>
+  <sc-if value="{{ todayEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:8px 20px 24px; font-size:14px; color:var(--color-neutral-700);">Nothing logged today. Tap + when you buy something.</div>
+  </sc-if>
+  <div style="display:flex; flex-direction:column; padding-bottom:16px;">
+  <sc-for list="{{ todayRows }}" as="row" hint-placeholder-count="3">
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; padding:12px 20px; border-top:1px solid var(--color-neutral-300);">
+      <div style="min-width:0; display:flex; flex-direction:column; gap:2px;">
+        <div style="font-size:15px; font-weight:600;">{{ row.name }}</div>
+        <div style="font-size:12px; color:var(--color-neutral-700);">{{ row.meta }}</div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+        <div style="font-size:15px; font-weight:600;">{{ row.amtStr }}</div>
+        <button onClick="{{ row.onWhy }}" aria-label="Why this class?" style="min-height:28px; padding:2px 8px; font-size:12px; font-weight:600; cursor:pointer; background:{{ row.bg }}; color:{{ row.fg }}; border:1px solid {{ row.bd }};">{{ row.cls }} · Why?</button>
+      </div>
+    </div>
+  </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isTransactions }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column;">
+  <div style="padding:16px 20px 12px; display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+    <div style="font-size:24px; font-weight:800;">Transactions</div>
+    <div style="font-size:13px; color:var(--color-neutral-700);">This week</div>
+  </div>
+  <div style="display:flex; gap:8px; padding:0 20px 16px; overflow-x:auto;">
+    <sc-for list="{{ filterChips }}" as="chip" hint-placeholder-count="5">
+      <button onClick="{{ chip.onClick }}" style="flex:none; min-height:44px; padding:0 14px; font-size:14px; cursor:pointer; border:1px solid var(--color-divider); background:{{ chip.bg }}; color:{{ chip.fg }};">{{ chip.label }} {{ chip.count }}</button>
+    </sc-for>
+  </div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <sc-if value="{{ txEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:24px 20px; font-size:14px; color:var(--color-neutral-700);">No purchases in this class this week.</div>
+  </sc-if>
+  <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+    <div style="display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; padding:16px 20px 8px; font-size:13px; font-weight:600;"><span>{{ g.label }}</span><span style="color:var(--color-neutral-700); font-weight:400;">{{ g.totalStr }}</span></div>
+      <sc-for list="{{ g.rows }}" as="row" hint-placeholder-count="3">
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; padding:12px 20px; border-top:1px solid var(--color-neutral-300);">
+          <div style="min-width:0; display:flex; flex-direction:column; gap:2px;">
+            <div style="font-size:15px; font-weight:600;">{{ row.name }}</div>
+            <div style="font-size:12px; color:var(--color-neutral-700);">{{ row.meta }}</div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+            <div style="font-size:15px; font-weight:600;">{{ row.amtStr }}</div>
+            <button onClick="{{ row.onWhy }}" aria-label="Why this class?" style="min-height:28px; padding:2px 8px; font-size:12px; font-weight:600; cursor:pointer; background:{{ row.bg }}; color:{{ row.fg }}; border:1px solid {{ row.bd }};">{{ row.cls }} · Why?</button>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-for>
+  <div style="height:24px;"></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isInsights }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column;">
+  <div style="padding:16px 20px 12px; display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+    <div style="font-size:24px; font-weight:800;">Insights</div>
+    <div style="font-size:13px; color:var(--color-neutral-700);">21–27 Sep</div>
+  </div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="padding:20px; display:flex; flex-direction:column; gap:12px;">
+    <div style="font-size:16px; font-weight:800;">Where it went</div>
+    <div style="display:flex; height:28px; border:1px solid var(--color-text);">
+      <sc-for list="{{ classBars }}" as="b" hint-placeholder-count="4">
+        <div style="width:{{ b.w }}; background:{{ b.bg }}; border-right:1px solid var(--color-bg);"></div>
+      </sc-for>
+    </div>
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px 16px;">
+      <sc-for list="{{ classBars }}" as="b" hint-placeholder-count="4">
+        <div style="display:flex; align-items:center; gap:8px; font-size:14px;">
+          <span style="width:12px; height:12px; flex:none; background:{{ b.bg }}; border:1px solid {{ b.bd }};"></span>
+          <span style="flex:1;">{{ b.label }}</span><span style="font-weight:600;">{{ b.amtStr }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="padding:20px 20px 8px; font-size:16px; font-weight:800;">Patterns this week</div>
+  <div style="display:flex; flex-direction:column; gap:12px; padding:0 20px 20px;">
+    <div style="background:var(--color-surface); padding:16px; display:flex; flex-direction:column; gap:8px;">
+      <sc-if value="{{ patternNames }}" hint-placeholder-val="{{ true }}"><div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600; color:var(--color-accent-700);"><span>Impulse spike</span><span>64 / 100</span></div></sc-if>
+      <div style="font-size:16px; font-weight:600; line-height:1.35; text-wrap:pretty;">This week had 2 late-night buys, and 3 purchases tagged Bored or Stressed.</div>
+      <div style="font-size:12px; color:var(--color-neutral-700);">Based on 23 purchases</div>
+      <button class="btn btn-ghost" onClick="{{ toggleWhyHappens }}" style="min-height:44px; align-self:flex-start; justify-content:flex-start; padding:0 4px; font-size:14px; color:var(--color-accent-700);">{{ whyHappensLabel }}</button>
+      <sc-if value="{{ whyHappensOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:14px; line-height:1.5; border-top:1px solid var(--color-divider); padding-top:10px; text-wrap:pretty;">Boredom and stress make the reward of buying feel bigger right now than it will later. A short wait lets the feeling pass before the money does.</div>
+      </sc-if>
+    </div>
+    <div style="background:var(--color-surface); padding:16px; display:flex; flex-direction:column; gap:8px;">
+      <sc-if value="{{ patternNames }}" hint-placeholder-val="{{ true }}"><div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600; color:var(--color-accent-700);"><span>Leak</span><span>71 / 100</span></div></sc-if>
+      <div style="font-size:16px; font-weight:600; line-height:1.35; text-wrap:pretty;">Iced coffee, about 5 a week, adds up to about $1,170 a year. That's your headphones 6 times over.</div>
+      <div style="font-size:12px; color:var(--color-neutral-700);">Based on 19 coffees in 4 weeks</div>
+    </div>
+    <div style="border:2px solid var(--color-text); padding:16px; display:flex; flex-direction:column; gap:8px;">
+      <sc-if value="{{ patternNames }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; font-weight:600;">Saver streak</div></sc-if>
+      <div style="font-size:16px; font-weight:600; line-height:1.35; text-wrap:pretty;">{{ saverLine }}</div>
+      <div style="font-size:12px; color:var(--color-neutral-700);">From your parking lot this month</div>
+    </div>
+  </div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);">
+    <div style="padding:20px; display:flex; flex-direction:column; gap:6px; border-right:1px solid var(--color-divider);">
+      <div style="font-size:13px; color:var(--color-neutral-700);">Bored vs Needed it</div>
+      <div style="font-size:36px; font-weight:800; line-height:1;">2.8x</div>
+      <div style="font-size:13px; line-height:1.4;">more per purchase when Bored</div>
+      <div style="font-size:12px; color:var(--color-neutral-700);">9 Bored, 14 Needed it</div>
+    </div>
+    <div style="padding:20px; display:flex; flex-direction:column; gap:6px;">
+      <div style="font-size:13px; color:var(--color-neutral-700);">Regret rate</div>
+      <div style="font-size:36px; font-weight:800; line-height:1;">1 in 5</div>
+      <div style="font-size:13px; line-height:1.4;">check-ins rated Regret it</div>
+      <div style="font-size:12px; color:var(--color-neutral-700);">Based on 10 check-ins</div>
+    </div>
+  </div>
+  <div style="background:var(--color-accent-700); color:#fff; padding:20px; display:flex; flex-direction:column; gap:12px;">
+    <div style="font-size:13px; font-weight:600;">This week's one thing</div>
+    <div style="font-size:22px; font-weight:800; line-height:1.2; text-wrap:pretty;">If I'm bored after 10pm, I'll park it instead of buying.</div>
+    <button onClick="{{ toggleCommit }}" style="min-height:48px; align-self:flex-start; padding:0 20px; font-size:15px; font-weight:600; cursor:pointer; border:2px solid #fff; background:{{ commitBg }}; color:{{ commitFg }};">{{ commitLabel }}</button>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isGoals }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column;">
+  <div style="padding:16px 20px 12px; font-size:24px; font-weight:800;">Goal</div>
+  <div style="position:relative; height:280px; border-top:2px solid var(--color-divider); border-bottom:2px solid var(--color-divider);">
+    <div class="grayscale" style="position:absolute; inset:0;"><image-slot id="goal-photo" shape="rect" placeholder="Drop a photo of what you're saving for"></image-slot></div>
+    <div style="position:absolute; left:0; right:0; top:0; height:{{ goalCoverH }}; background:color-mix(in srgb, var(--color-bg) 70%, transparent); pointer-events:none;"></div>
+  </div>
+  <div style="padding:20px; display:flex; flex-direction:column; gap:8px;">
+    <div style="font-size:32px; font-weight:800; line-height:1;">{{ goal.name }}</div>
+    <div style="display:flex; justify-content:space-between; font-size:15px;"><span>{{ goalSavedStr }} of {{ goalTargetStr }}</span><span style="font-weight:600;">{{ goalPctStr }}</span></div>
+    <div style="height:8px; background:var(--color-neutral-300); position:relative;"><div style="position:absolute; left:0; top:0; bottom:0; width:{{ goalPctStr }}; background:var(--color-accent);"></div></div>
+    <div style="font-size:14px; color:var(--color-neutral-700);">{{ goalEta }}, based on your last 4 weeks.</div>
+    <button class="btn btn-primary" onClick="{{ toggleAdd }}" style="min-height:48px; align-self:flex-start; justify-content:flex-start; padding:0 20px; font-size:15px; margin-top:8px;">Add money</button>
+    <sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; gap:8px;">
+        <sc-for list="{{ addAmounts }}" as="a" hint-placeholder-count="3">
+          <button class="btn btn-secondary" onClick="{{ a.onClick }}" style="min-height:48px; min-width:64px; justify-content:flex-start; padding:0 14px; font-size:15px;">{{ a.label }}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="padding:16px 20px 8px; font-size:16px; font-weight:800;">How it got here</div>
+  <sc-for list="{{ contribRows }}" as="c" hint-placeholder-count="4">
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; padding:12px 20px; border-top:1px solid var(--color-neutral-300);">
+      <div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:600;">{{ c.label }}</span><span style="font-size:12px; color:var(--color-neutral-700);">{{ c.date }}</span></div>
+      <span style="font-size:15px; font-weight:600;">+{{ c.amtStr }}</span>
+    </div>
+  </sc-for>
+  <div style="height:24px;"></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isThinking }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column; min-height:100%;">
+  <div style="display:flex; align-items:center; gap:4px; padding:4px 8px; min-height:56px; border-bottom:2px solid var(--color-divider);">
+    <button aria-label="Back" onClick="{{ goHome }}" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button>
+    <div style="font-size:18px; font-weight:800;">Thinking of buying</div>
+  </div>
+  <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+    <div class="field"><label for="tb-name">What is it?</label><input id="tb-name" class="input" value="{{ think.name }}" onChange="{{ onThinkName }}" placeholder="Wireless earbuds" style="min-height:48px; font-size:16px;"></div>
+    <div class="field"><label for="tb-price">Price</label><input id="tb-price" class="input" inputMode="decimal" value="{{ think.price }}" onChange="{{ onThinkPrice }}" placeholder="0.00" style="min-height:48px; font-size:16px;"></div>
+    <button onClick="{{ toggleSale }}" aria-pressed="{{ think.sale }}" style="display:flex; align-items:center; gap:12px; min-height:48px; padding:0; border:0; background:transparent; cursor:pointer; font-size:15px; color:var(--color-text); text-align:left;">
+      <span style="width:22px; height:22px; flex:none; border:2px solid var(--color-text); background:{{ saleBox }};"></span>It's on a sale or has a countdown
+    </button>
+  </div>
+  <sc-if value="{{ hasPrice }}" hint-placeholder-val="{{ false }}">
+  <div style="border-top:2px solid var(--color-divider); padding:20px; display:flex; flex-direction:column; gap:10px;">
+    <div style="font-size:13px; color:var(--color-neutral-700);">{{ weightLabel }} purchase</div>
+    <div style="font-size:44px; font-weight:800; line-height:1;">{{ weightStr }}</div>
+    <div style="font-size:15px;">of your {{ weekMoneyStr }} week</div>
+    <div style="font-size:15px; line-height:1.45; text-wrap:pretty;">{{ delayLine }}</div>
+    <sc-if value="{{ think.sale }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:14px; line-height:1.5; background:var(--color-surface); padding:12px 14px; text-wrap:pretty;">Countdown timers are there to rush the decision. Most sales come back, and the wait costs you nothing.</div>
+    </sc-if>
+  </div>
+  <div style="border-top:2px solid var(--color-divider); padding:20px; display:flex; flex-direction:column; gap:12px;">
+    <sc-if value="{{ overLine }}" hint-placeholder-val="{{ true }}">
+      <div style="font-size:15px; font-weight:600;">It's over your {{ thresholdStr }} line. Wait before deciding?</div>
+      <div role="radiogroup" aria-label="Wait period" style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); border:1px solid var(--color-divider);">
+        <sc-for list="{{ waitOpts }}" as="w" hint-placeholder-count="3">
+          <button role="radio" aria-checked="{{ w.on }}" onClick="{{ w.onClick }}" style="min-height:48px; border:0; border-right:1px solid var(--color-divider); cursor:pointer; font-size:15px; background:{{ w.bg }}; color:{{ w.fg }};">{{ w.label }}</button>
+        </sc-for>
+      </div>
+      <button class="btn btn-primary" onClick="{{ parkIt }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Park it for {{ waitLabel }}</button>
+    </sc-if>
+    <sc-if value="{{ underLine }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:15px; line-height:1.45;">Under your {{ thresholdStr }} line, so no wait needed.</div>
+    </sc-if>
+    <button class="btn btn-secondary" onClick="{{ buyNow }}" style="min-height:48px; justify-content:flex-start; padding:0 20px; font-size:15px;">Buy it now and log it</button>
+  </div>
+  </sc-if>
+  <sc-if value="{{ noPrice }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:0 20px 20px; font-size:14px; color:var(--color-neutral-700); line-height:1.5;">Add a price to see what share of your week it takes and how long it pushes back your goal.</div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isParking }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column;">
+  <div style="display:flex; align-items:center; gap:4px; padding:4px 8px; min-height:56px; border-bottom:2px solid var(--color-divider);">
+    <button aria-label="Back" onClick="{{ goHome }}" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button>
+    <div style="font-size:18px; font-weight:800; flex:1;">Parking lot</div>
+    <button class="btn btn-ghost" onClick="{{ goThinking }}" style="min-height:44px; padding:0 12px; font-size:14px; color:var(--color-accent-700);">Park something</button>
+  </div>
+  <div style="padding:20px; font-size:20px; font-weight:800; line-height:1.25; text-wrap:pretty;">{{ saverLine }}</div>
+  <sc-for list="{{ readyItems }}" as="it" hint-placeholder-count="1">
+    <div style="background:var(--color-accent-700); color:#fff; padding:20px; display:flex; flex-direction:column; gap:12px;">
+      <div style="font-size:13px; font-weight:600;">Wait's over · {{ it.priceStr }}</div>
+      <div style="font-size:24px; font-weight:800; line-height:1.15;">Still want the {{ it.name }}?</div>
+      <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px;">
+        <button onClick="{{ it.onSkip }}" style="min-height:48px; padding:0 12px; text-align:left; font-size:15px; font-weight:600; cursor:pointer; border:2px solid #fff; background:#fff; color:var(--color-accent-800);">Skip it</button>
+        <button onClick="{{ it.onWait }}" style="min-height:48px; padding:0 12px; text-align:left; font-size:15px; cursor:pointer; border:2px solid #fff; background:transparent; color:#fff;">Wait longer</button>
+        <button onClick="{{ it.onBuy }}" style="min-height:48px; padding:0 12px; text-align:left; font-size:15px; cursor:pointer; border:2px solid #fff; background:transparent; color:#fff;">Buy it</button>
+      </div>
+    </div>
+  </sc-for>
+  <div style="padding:20px 20px 8px; font-size:16px; font-weight:800;">Waiting</div>
+  <sc-if value="{{ noWaiting }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:0 20px 16px; font-size:14px; color:var(--color-neutral-700);">Nothing waiting right now.</div>
+  </sc-if>
+  <sc-for list="{{ waitingItems }}" as="it" hint-placeholder-count="1">
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; padding:14px 20px; border-top:1px solid var(--color-neutral-300);">
+      <div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:600;">{{ it.name }}</span><span style="font-size:12px; color:var(--color-neutral-700);">{{ it.priceStr }} · {{ it.weightStr }} of your week</span></div>
+      <span style="font-size:14px; font-weight:600;">{{ it.leftStr }}</span>
+    </div>
+  </sc-for>
+  <div style="height:2px; background:var(--color-divider); margin-top:8px;"></div>
+  <div style="padding:20px 20px 8px; font-size:16px; font-weight:800;">Decided this month</div>
+  <sc-for list="{{ historyItems }}" as="it" hint-placeholder-count="3">
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; padding:12px 20px; border-top:1px solid var(--color-neutral-300);">
+      <div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:600;">{{ it.name }}</span><span style="font-size:12px; color:var(--color-neutral-700);">{{ it.priceStr }} · {{ it.date }}</span></div>
+      <span style="font-size:12px; font-weight:600; padding:3px 8px; background:{{ it.bg }}; color:{{ it.fg }}; border:1px solid {{ it.bd }};">{{ it.outcome }}</span>
+    </div>
+  </sc-for>
+  <div style="height:24px;"></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLookback }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column; min-height:100%; box-sizing:border-box; padding:16px 20px 24px; gap:16px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="font-size:13px; font-weight:600; color:var(--color-accent-700);">Check-in · 14 days later</div>
+    <button aria-label="Close" onClick="{{ goHome }}" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+  </div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <sc-if value="{{ lbAskFeeling }}" hint-placeholder-val="{{ true }}">
+    <div style="font-size:36px; font-weight:800; line-height:1.05; text-wrap:pretty; padding-top:24px;">How do you feel about the denim jacket now?</div>
+    <div style="font-size:14px; color:var(--color-neutral-700);">$38.00 · Clothing · bought Fri 12 Sep</div>
+    <div style="flex:1;"></div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <sc-for list="{{ lbFeelings }}" as="f" hint-placeholder-count="3">
+        <button class="btn btn-secondary" onClick="{{ f.onClick }}" style="min-height:64px; justify-content:flex-start; padding:0 20px; font-size:18px; font-weight:600; border-width:2px;">{{ f.label }}</button>
+      </sc-for>
+    </div>
+    <button class="btn btn-ghost" onClick="{{ goHome }}" style="min-height:44px; align-self:flex-start; padding:0 4px; font-size:14px; color:var(--color-accent-700);">Ask me later</button>
+  </sc-if>
+  <sc-if value="{{ lbAskUsage }}" hint-placeholder-val="{{ false }}">
+    <div style="font-size:36px; font-weight:800; line-height:1.05; padding-top:24px;">Have you worn it?</div>
+    <div style="font-size:14px; color:var(--color-neutral-700);">You said: {{ lbFeelingLabel }}</div>
+    <div style="flex:1;"></div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <sc-for list="{{ lbUsages }}" as="u" hint-placeholder-count="3">
+        <button class="btn btn-secondary" onClick="{{ u.onClick }}" style="min-height:64px; justify-content:flex-start; padding:0 20px; font-size:18px; font-weight:600; border-width:2px;">{{ u.label }}</button>
+      </sc-for>
+    </div>
+  </sc-if>
+  <sc-if value="{{ lbDone }}" hint-placeholder-val="{{ false }}">
+    <div style="font-size:36px; font-weight:800; line-height:1.05; padding-top:24px;">Thanks. Noted.</div>
+    <div style="font-size:16px; line-height:1.5; text-wrap:pretty;">{{ lbResult }}</div>
+    <div style="flex:1;"></div>
+    <button class="btn btn-primary" onClick="{{ goHome }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Back to home</button>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column; min-height:100%; box-sizing:border-box; padding:16px 20px 24px; gap:16px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; min-height:44px;">
+    <div style="font-size:18px; font-weight:800;">Pocket Sense</div>
+    <div style="font-size:13px; color:var(--color-neutral-700);">Step {{ obStepNum }} of 4</div>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:4px;">
+    <sc-for list="{{ obBars }}" as="b" hint-placeholder-count="4"><div style="height:4px; background:{{ b.bg }};"></div></sc-for>
+  </div>
+  <sc-if value="{{ ob0 }}" hint-placeholder-val="{{ true }}">
+    <div style="font-size:32px; font-weight:800; line-height:1.05; padding-top:16px;">Where does your money come from?</div>
+    <div style="font-size:14px; color:var(--color-neutral-700);">Pick all that apply.</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+      <sc-for list="{{ obIncomeChips }}" as="c" hint-placeholder-count="5">
+        <button aria-pressed="{{ c.on }}" onClick="{{ c.onClick }}" style="min-height:48px; padding:0 16px; font-size:15px; cursor:pointer; border:1px solid var(--color-text); background:{{ c.bg }}; color:{{ c.fg }};">{{ c.label }}</button>
+      </sc-for>
+    </div>
+  </sc-if>
+  <sc-if value="{{ ob1 }}" hint-placeholder-val="{{ false }}">
+    <div style="font-size:32px; font-weight:800; line-height:1.05; padding-top:16px;">Where do you keep it?</div>
+    <div style="font-size:14px; color:var(--color-neutral-700);">The last one you use becomes the default.</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+      <sc-for list="{{ obWalletChips }}" as="c" hint-placeholder-count="4">
+        <button aria-pressed="{{ c.on }}" onClick="{{ c.onClick }}" style="min-height:48px; padding:0 16px; font-size:15px; cursor:pointer; border:1px solid var(--color-text); background:{{ c.bg }}; color:{{ c.fg }};">{{ c.label }}</button>
+      </sc-for>
+    </div>
+  </sc-if>
+  <sc-if value="{{ ob2 }}" hint-placeholder-val="{{ false }}">
+    <div style="font-size:32px; font-weight:800; line-height:1.05; padding-top:16px;">Saving for something?</div>
+    <div style="font-size:14px; color:var(--color-neutral-700);">Optional. One thing, with a price.</div>
+    <div class="field"><label for="ob-gname">What is it?</label><input id="ob-gname" class="input" value="{{ ob.goalName }}" onChange="{{ onObGoalName }}" style="min-height:48px; font-size:16px;"></div>
+    <div class="field"><label for="ob-gprice">Price</label><input id="ob-gprice" class="input" inputMode="decimal" value="{{ ob.goalPrice }}" onChange="{{ onObGoalPrice }}" style="min-height:48px; font-size:16px;"></div>
+  </sc-if>
+  <sc-if value="{{ ob3 }}" hint-placeholder-val="{{ false }}">
+    <div style="font-size:32px; font-weight:800; line-height:1.05; padding-top:16px;">When should we suggest a pause?</div>
+    <div style="font-size:14px; color:var(--color-neutral-700);">Share of your weekly money. You can change it later.</div>
+    <div role="radiogroup" aria-label="Cooldown line" style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); border:1px solid var(--color-divider);">
+      <sc-for list="{{ obThresholds }}" as="t" hint-placeholder-count="3">
+        <button role="radio" aria-checked="{{ t.on }}" onClick="{{ t.onClick }}" style="min-height:52px; border:0; border-right:1px solid var(--color-divider); cursor:pointer; font-size:16px; background:{{ t.bg }}; color:{{ t.fg }};">{{ t.label }}</button>
+      </sc-for>
+    </div>
+    <div style="font-size:15px; line-height:1.5;">{{ obThresholdLine }}</div>
+  </sc-if>
+  <div style="flex:1;"></div>
+  <div style="display:flex; gap:8px;">
+    <sc-if value="{{ obCanBack }}" hint-placeholder-val="{{ false }}">
+      <button class="btn btn-secondary" onClick="{{ obBack }}" style="min-height:52px; padding:0 20px; font-size:16px;">Back</button>
+    </sc-if>
+    <button class="btn btn-primary" onClick="{{ obNext }}" style="flex:1; min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">{{ obNextLabel }}</button>
+  </div>
+</div>
+</sc-if>
+
+</div>
+
+<sc-if value="{{ showNav }}" hint-placeholder-val="{{ true }}">
+<nav aria-label="Main" style="flex:none; display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); align-items:stretch; border-top:2px solid var(--color-text); background:var(--color-bg); min-height:64px;">
+  <button onClick="{{ goHome }}" aria-current="{{ curHome }}" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; background:transparent; cursor:pointer; font-size:11px; color:{{ navHome }}; font-weight:{{ navHomeW }};"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Home</button>
+  <button onClick="{{ goTransactions }}" aria-current="{{ curTx }}" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; background:transparent; cursor:pointer; font-size:11px; color:{{ navTx }}; font-weight:{{ navTxW }};"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13"></path></svg>Spending</button>
+  <div style="display:flex; align-items:center; justify-content:center;">
+    <button onClick="{{ openLog }}" aria-label="Log a purchase" style="width:56px; height:56px; display:flex; align-items:center; justify-content:center; border:0; cursor:pointer; background:var(--color-accent); color:#fff;" style-hover="background:var(--color-accent-600);" style-active="background:var(--color-accent-700);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+  </div>
+  <button onClick="{{ goInsights }}" aria-current="{{ curIn }}" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; background:transparent; cursor:pointer; font-size:11px; color:{{ navIn }}; font-weight:{{ navInW }};"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>Insights</button>
+  <button onClick="{{ goGoals }}" aria-current="{{ curGo }}" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; background:transparent; cursor:pointer; font-size:11px; color:{{ navGo }}; font-weight:{{ navGoW }};"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>Goal</button>
+</nav>
+</sc-if>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+  <div role="status" style="position:absolute; left:16px; right:16px; bottom:{{ toastBottom }}; background:var(--color-text); color:var(--color-bg); padding:14px 16px; font-size:14px; line-height:1.4; z-index:15;">{{ toast }}</div>
+</sc-if>
+
+<sc-if value="{{ logOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; justify-content:flex-end;">
+  <div onClick="{{ closeLog }}" style="position:absolute; inset:0; background:color-mix(in srgb, var(--color-text) 45%, transparent);"></div>
+  <div role="dialog" aria-label="Quick log" style="position:relative; background:var(--color-bg); border-top:2px solid var(--color-text); max-height:94%; overflow-y:auto; display:flex; flex-direction:column;">
+    <div style="display:flex; align-items:center; gap:8px; padding:8px 8px 8px 20px;">
+      <div role="radiogroup" aria-label="Type" style="display:flex; border:1px solid var(--color-divider);">
+        <button role="radio" aria-checked="{{ modePurchase }}" onClick="{{ setModePurchase }}" style="min-height:40px; padding:0 14px; border:0; cursor:pointer; font-size:14px; background:{{ modePBg }}; color:{{ modePFg }};">Purchase</button>
+        <button role="radio" aria-checked="{{ modeIncome }}" onClick="{{ setModeIncome }}" style="min-height:40px; padding:0 14px; border:0; border-left:1px solid var(--color-divider); cursor:pointer; font-size:14px; background:{{ modeIBg }}; color:{{ modeIFg }};">Income</button>
+      </div>
+      <div style="flex:1;"></div>
+      <button aria-label="Close" onClick="{{ closeLog }}" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+    </div>
+
+    <sc-if value="{{ logEntry }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:4px 20px 12px; display:flex; flex-direction:column; gap:4px;">
+        <div style="font-size:56px; font-weight:800; line-height:1; letter-spacing:-0.02em; color:{{ amtColor }};">${{ logAmtShown }}</div>
+        <div style="font-size:13px; color:var(--color-neutral-700); min-height:18px;">{{ logHint }}</div>
+      </div>
+      <sc-if value="{{ modePurchase }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; gap:8px; padding:0 20px 12px; overflow-x:auto;">
+          <sc-for list="{{ repeatChips }}" as="r" hint-placeholder-count="2">
+            <button onClick="{{ r.onClick }}" style="flex:none; min-height:44px; padding:0 12px; font-size:13px; cursor:pointer; border:1px dashed var(--color-text); background:transparent; color:var(--color-text);">Repeat · {{ r.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); border-top:2px solid var(--color-divider);">
+          <sc-for list="{{ catChips }}" as="c" hint-placeholder-count="8">
+            <button onClick="{{ c.onClick }}" style="min-height:60px; padding:8px 10px; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:2px; text-align:left; border:0; border-right:1px solid var(--color-neutral-300); border-bottom:1px solid var(--color-neutral-300); background:transparent; cursor:pointer; color:var(--color-text);" style-hover="background:var(--color-surface);" style-active="background:var(--color-accent-100);"><span style="font-size:13px; font-weight:600;">{{ c.label }}</span><span style="font-size:11px; color:var(--color-neutral-700);">{{ c.cls }}</span></button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ modeIncome }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); border-top:2px solid var(--color-divider);">
+          <sc-for list="{{ incomeChips }}" as="c" hint-placeholder-count="5">
+            <button onClick="{{ c.onClick }}" style="min-height:56px; padding:8px 12px; text-align:left; border:0; border-right:1px solid var(--color-neutral-300); border-bottom:1px solid var(--color-neutral-300); background:transparent; cursor:pointer; font-size:14px; font-weight:600; color:var(--color-text);" style-hover="background:var(--color-surface);">{{ c.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:1px; background:var(--color-neutral-300); border-top:2px solid var(--color-divider);">
+        <sc-for list="{{ keys }}" as="k" hint-placeholder-count="12">
+          <button onClick="{{ k.onClick }}" aria-label="{{ k.aria }}" style="min-height:54px; border:0; background:var(--color-bg); cursor:pointer; font-size:22px; font-weight:600; color:var(--color-text); display:flex; align-items:center; justify-content:center;" style-active="background:var(--color-neutral-300);">{{ k.label }}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ logSavedPurchase }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:8px 20px 20px; display:flex; flex-direction:column; gap:14px;">
+        <div style="font-size:13px; font-weight:600; color:var(--color-accent-700);">Saved</div>
+        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+          <div style="font-size:24px; font-weight:800;">{{ saved.name }}</div>
+          <div style="font-size:24px; font-weight:800;">{{ saved.amtStr }}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button onClick="{{ saved.onWhy }}" style="min-height:32px; padding:2px 10px; font-size:13px; font-weight:600; cursor:pointer; background:{{ saved.bg }}; color:{{ saved.fg }}; border:1px solid {{ saved.bd }};">{{ saved.cls }} · Why?</button>
+          <span style="font-size:13px; color:var(--color-neutral-700);">{{ saved.weightLine }}</span>
+        </div>
+        <div style="height:2px; background:var(--color-divider);"></div>
+        <div style="font-size:15px; font-weight:600;">How were you feeling? <span style="font-weight:400; color:var(--color-neutral-700);">Optional</span></div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <sc-for list="{{ moodChips }}" as="m" hint-placeholder-count="8">
+            <button aria-pressed="{{ m.on }}" onClick="{{ m.onClick }}" style="min-height:44px; padding:0 12px; font-size:14px; cursor:pointer; border:1px solid var(--color-text); background:{{ m.bg }}; color:{{ m.fg }};">{{ m.label }}</button>
+          </sc-for>
+        </div>
+        <div style="font-size:15px; font-weight:600;">Paid with</div>
+        <div role="radiogroup" aria-label="Wallet" style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); border:1px solid var(--color-divider);">
+          <sc-for list="{{ walletOpts }}" as="w" hint-placeholder-count="3">
+            <button role="radio" aria-checked="{{ w.on }}" onClick="{{ w.onClick }}" style="min-height:44px; border:0; border-right:1px solid var(--color-divider); cursor:pointer; font-size:14px; background:{{ w.bg }}; color:{{ w.fg }};">{{ w.label }}</button>
+          </sc-for>
+        </div>
+        <button class="btn btn-primary" onClick="{{ closeLog }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Done</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ logSavedIncome }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:8px 20px 24px; display:flex; flex-direction:column; gap:12px;">
+        <div style="font-size:13px; font-weight:600; color:var(--color-accent-700);">Added</div>
+        <div style="font-size:28px; font-weight:800; line-height:1.1;">{{ savedIncomeLine }}</div>
+        <div style="font-size:15px;">You now have {{ leftStr }} left this week.</div>
+        <button class="btn btn-primary" onClick="{{ closeLog }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Done</button>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ whyOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute; inset:0; z-index:30; display:flex; flex-direction:column; justify-content:flex-end;">
+  <div onClick="{{ closeWhy }}" style="position:absolute; inset:0; background:color-mix(in srgb, var(--color-text) 45%, transparent);"></div>
+  <div role="dialog" aria-label="Why this class" style="position:relative; background:var(--color-bg); border-top:2px solid var(--color-text); padding:8px 20px 20px; display:flex; flex-direction:column; gap:14px;">
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <div style="font-size:13px; color:var(--color-neutral-700);">{{ why.name }} · {{ why.amtStr }}</div>
+      <button aria-label="Close" onClick="{{ closeWhy }}" style="width:44px; height:44px; margin-right:-12px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+    </div>
+    <div style="font-size:28px; font-weight:800; line-height:1.05;">Why {{ why.cls }}?</div>
+    <div style="display:flex; flex-direction:column;">
+      <sc-for list="{{ why.reasons }}" as="r" hint-placeholder-count="2">
+        <div style="display:grid; grid-template-columns:24px minmax(0,1fr); gap:8px; padding:10px 0; border-top:1px solid var(--color-divider); font-size:15px;"><span style="font-weight:800;">{{ r.n }}</span><span>{{ r.text }}</span></div>
+      </sc-for>
+    </div>
+    <div style="font-size:15px; font-weight:600;">Not right? You decide.</div>
+    <div style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px;">
+      <sc-for list="{{ why.opts }}" as="o" hint-placeholder-count="4">
+        <button aria-pressed="{{ o.on }}" onClick="{{ o.onClick }}" style="min-height:48px; padding:0 8px; text-align:left; font-size:14px; font-weight:600; cursor:pointer; border:1px solid var(--color-text); background:{{ o.bg }}; color:{{ o.fg }};">{{ o.label }}</button>
+      </sc-for>
+    </div>
+    <sc-if value="{{ why.canRule }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ toggleRule }}" aria-pressed="{{ why.ruleOn }}" style="display:flex; align-items:center; gap:12px; min-height:48px; padding:0; border:0; background:transparent; cursor:pointer; font-size:15px; color:var(--color-text); text-align:left;"><span style="width:22px; height:22px; flex:none; border:2px solid var(--color-text); background:{{ why.ruleBox }};"></span>Always treat {{ why.catName }} as {{ why.cls }}</button>
+    </sc-if>
+    <button class="btn btn-primary" onClick="{{ closeWhy }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Done</button>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</x-import>
+</div>
+
+<aside style="flex:1 1 300px; max-width:380px; display:flex; flex-direction:column; gap:20px; padding-top:8px;">
+  <div style="display:flex; flex-direction:column; gap:6px;">
+    <div style="font-size:32px; font-weight:800; line-height:1;">Pocket Sense</div>
+    <div style="font-size:14px; line-height:1.5; color:var(--color-neutral-700); text-wrap:pretty;">Clickable prototype of spec v0.2. Sample data for Rina, 19, a month-end struggler, in USD.</div>
+  </div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    <div style="font-size:13px; font-weight:600;">Screens</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:6px;">
+      <sc-for list="{{ panelScreens }}" as="s" hint-placeholder-count="8">
+        <button aria-current="{{ s.on }}" onClick="{{ s.onClick }}" style="min-height:44px; padding:0 12px; text-align:left; font-size:14px; cursor:pointer; border:1px solid var(--color-text); background:{{ s.bg }}; color:{{ s.fg }};">{{ s.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    <div style="font-size:13px; font-weight:600;">Data state</div>
+    <div role="radiogroup" aria-label="Data state" style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); border:1px solid var(--color-divider);">
+      <sc-for list="{{ stateOpts }}" as="o" hint-placeholder-count="4">
+        <button role="radio" aria-checked="{{ o.on }}" onClick="{{ o.onClick }}" style="min-height:44px; padding:0 6px; border:0; border-right:1px solid var(--color-divider); cursor:pointer; font-size:13px; background:{{ o.bg }}; color:{{ o.fg }};">{{ o.label }}</button>
+      </sc-for>
+    </div>
+    <div style="font-size:12px; line-height:1.5; color:var(--color-neutral-700);">Applies to Home, Spending, Insights, Goal and Parking lot.</div>
+  </div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="font-size:14px; line-height:1.55; text-wrap:pretty;">Try the two-tap log: press +, type an amount, tap a category. Or tap a Repeat chip for a single tap.</div>
+  <button class="btn btn-secondary" onClick="{{ resetAll }}" style="min-height:44px; align-self:flex-start; justify-content:flex-start; padding:0 16px; font-size:14px;">Reset prototype</button>
+</aside>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;patternNames&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior Lens&quot;},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;home&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;onboarding&quot;,&quot;transactions&quot;,&quot;insights&quot;,&quot;goals&quot;,&quot;thinking&quot;,&quot;parking&quot;,&quot;lookback&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;}}">
+const TODAY = '2026-09-26';
+const DAY_LABEL = { '2026-09-26': 'Today · Sat 26 Sep', '2026-09-25': 'Yesterday · Fri 25 Sep', '2026-09-24': 'Thu 24 Sep', '2026-09-23': 'Wed 23 Sep' };
+const CATS = [
+  { id: 'meals', name: 'Meals', cls: 'need' },
+  { id: 'snacks', name: 'Snacks & drinks', short: 'Snacks', cls: 'want' },
+  { id: 'transport', name: 'Transport', cls: 'need' },
+  { id: 'school', name: 'School & books', short: 'School', cls: 'need' },
+  { id: 'clothing', name: 'Clothing', cls: 'useful' },
+  { id: 'subs', name: 'Subscriptions', short: 'Subs', cls: 'useful' },
+  { id: 'games', name: 'Games & in-app', short: 'Games', cls: 'want' },
+  { id: 'savings', name: 'Savings transfer', short: 'Savings', cls: 'invest' },
+];
+const CLS = {
+  need: { label: 'Need', bg: 'var(--color-text)', fg: 'var(--color-bg)', bd: 'var(--color-text)' },
+  useful: { label: 'Useful', bg: 'transparent', fg: 'var(--color-text)', bd: 'var(--color-text)' },
+  want: { label: 'Want', bg: 'var(--color-accent-100)', fg: 'var(--color-accent-800)', bd: 'var(--color-accent-400)' },
+  invest: { label: 'Invest', bg: 'var(--color-accent-700)', fg: '#fff', bd: 'var(--color-accent-700)' },
+};
+const ART = { need: 'a Need', useful: 'Useful', want: 'a Want', invest: 'Invest' };
+const MOODS = ['Needed it', 'Bored', 'Stressed', 'Celebrating', 'Hungry', 'Tired', 'Social pressure', 'Treating myself'];
+const WANT_MOODS = ['Bored', 'Stressed', 'Treating myself'];
+const WALLETS = ['Cash', 'E-wallet', 'Card'];
+const INCOME_SRC = ['Allowance', 'Part-time', 'Gift', 'Freelance', 'Other'];
+const SCREENS = [
+  ['home', 'Home'], ['transactions', 'Spending'], ['insights', 'Insights'], ['goals', 'Goal'],
+  ['thinking', 'Thinking of buying'], ['parking', 'Parking lot'], ['lookback', 'Look-back'], ['onboarding', 'Onboarding'],
+];
+const DATA_SCREENS = ['home', 'transactions', 'insights', 'goals', 'parking'];
+const ord = n => n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th');
+const money = n => (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2);
+const money0 = n => '$' + (Math.round(n * 100) % 100 === 0 ? Math.round(n) : n.toFixed(2));
+const pad = n => String(n).padStart(2, '0');
+const SEED = [
+  ['p1', 'Campus bus', 'transport', 1.25, 'Cash', null, TODAY, 8, 10],
+  ['p2', 'Iced coffee', 'snacks', 4.5, 'E-wallet', 'Tired', TODAY, 8, 40],
+  ['p3', 'Delivery lunch', 'meals', 11.8, 'E-wallet', 'Stressed', TODAY, 12, 35],
+  ['p4', 'Groceries', 'meals', 9.6, 'Card', 'Needed it', '2026-09-25', 10, 15],
+  ['p5', 'Bubble tea', 'snacks', 5.2, 'E-wallet', 'Social pressure', '2026-09-25', 16, 10],
+  ['p6', 'Flash-sale top', 'clothing', 14, 'E-wallet', 'Bored', '2026-09-25', 23, 20],
+  ['p7', 'Study app', 'subs', 3.99, 'Card', null, '2026-09-24', 9, 0],
+  ['p8', 'Iced coffee', 'snacks', 4.5, 'E-wallet', null, '2026-09-24', 8, 45],
+  ['p9', 'Campus bus', 'transport', 1.25, 'Cash', null, '2026-09-24', 8, 5],
+  ['p10', 'Course reader', 'school', 7, 'Cash', 'Needed it', '2026-09-23', 11, 30],
+  ['p11', 'Crisps', 'snacks', 2.1, 'Cash', 'Hungry', '2026-09-23', 15, 50],
+].map(([id, name, cat, amt, wallet, mood, day, hour, min]) => ({ id, name, cat, amt, wallet, mood, day, hour, min }));
+
+function init(screen) {
+  const now = Date.now();
+  return {
+    screen: screen || 'home', dataState: 'normal', purchases: SEED.slice(), weekMoney: 120, rules: {}, filter: 'all',
+    log: { open: false, mode: 'purchase', amt: '', savedId: null, savedIncome: null, hint: '' },
+    whyId: null, lastWallet: 'E-wallet',
+    goal: { name: 'Headphones', target: 180, contribs: [
+      { label: 'Added', amt: 20, date: 'Tue 2 Sep' },
+      { label: 'Skipped: Sneakers', amt: 42, date: 'Sun 14 Sep' },
+      { label: 'No-spend day', amt: 5, date: 'Fri 19 Sep' },
+      { label: 'Added', amt: 10, date: 'Mon 22 Sep' },
+    ] },
+    addOpen: false,
+    parking: [
+      { id: 'k1', name: 'Bluetooth speaker', price: 34, endsAt: now + (3 * 60 + 12) * 60000, outcome: 'pending' },
+      { id: 'k2', name: 'hoodie', price: 28, endsAt: now - 10 * 60000, outcome: 'pending' },
+      { id: 'k3', name: 'Sneakers', price: 42, outcome: 'skipped', date: 'Sun 14 Sep' },
+      { id: 'k4', name: 'Phone case', price: 12, outcome: 'skipped', date: 'Wed 10 Sep' },
+      { id: 'k5', name: 'Novel', price: 9, outcome: 'bought', date: 'Sat 6 Sep' },
+    ],
+    lookback: { feeling: null, usage: null },
+    think: { name: '', price: '', wait: '24h', sale: false },
+    ob: { step: 0, income: ['Allowance', 'Part-time'], wallets: ['Cash', 'E-wallet'], goalName: 'Headphones', goalPrice: '180', threshold: 15 },
+    committed: false, whyHappens: false, toast: null, now,
+  };
+}
+
+class Component extends DCLogic {
+  state = Object.assign(init(this.props.startScreen), { zoom: 1 });
+  scrollRef = React.createRef();
+
+  componentDidMount() {
+    this.fit = () => this.setState({ zoom: Math.min(1, (window.innerWidth - 32) / 412) });
+    this.fit();
+    window.addEventListener('resize', this.fit);
+    this.tick = setInterval(() => this.setState({ now: Date.now() }), 30000);
+    this.onKey = e => {
+      if (e.key !== 'Escape') return;
+      if (this.state.whyId) this.setState({ whyId: null });
+      else if (this.state.log.open) this.closeLog();
+    };
+    window.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.fit);
+    window.removeEventListener('keydown', this.onKey);
+    clearInterval(this.tick); clearTimeout(this.toastT);
+  }
+  go(screen) {
+    this.setState({ screen, addOpen: false });
+    if (this.scrollRef.current) this.scrollRef.current.scrollTop = 0;
+  }
+  toast(msg) {
+    clearTimeout(this.toastT);
+    this.setState({ toast: msg });
+    this.toastT = setTimeout(() => this.setState({ toast: null }), 2800);
+  }
+  classify(p, all) {
+    const cat = CATS.find(c => c.id === p.cat);
+    if (p.override) return { cls: p.override, reasons: ['You picked this yourself'] };
+    if (this.state.rules[p.cat]) return { cls: this.state.rules[p.cat], reasons: [`You chose to always treat ${cat.name} as ${CLS[this.state.rules[p.cat]].label}`] };
+    const s = { need: 0, useful: 0, want: 0, invest: 0 }, r = { need: [], useful: [], want: [], invest: [] };
+    const add = (k, v, t) => { s[k] += v; r[k].push([v, t]); };
+    add(cat.cls, 0.5, `${cat.name} is usually ${ART[cat.cls]}`);
+    if (p.mood && WANT_MOODS.includes(p.mood)) add('want', cat.id === 'clothing' ? 0.4 : 0.2, `Tagged ${p.mood}`);
+    if (p.hour >= 22 || p.hour < 3) add('want', 0.1, 'Bought after 10pm');
+    if (cat.id === 'meals' && /deliver/i.test(p.name)) add('want', 0.4, 'Delivery, on a day you usually cook');
+    const t = p.hour * 60 + p.min;
+    const same = all.filter(q => q.day === p.day && q.cat === p.cat && q.id !== p.id && q.hour * 60 + q.min < t).length;
+    if (same >= 2) add('want', 0.2, `${ord(same + 1)} ${(cat.short || cat.name).toLowerCase()} buy today`);
+    const others = all.filter(q => q.cat === p.cat && q.id !== p.id).map(q => q.amt).sort((a, b) => a - b);
+    if (others.length >= 2) {
+      const med = others[Math.floor(others.length / 2)];
+      if (p.amt > 2 * med) add('want', 0.15, `More than 2x your usual ${(cat.short || cat.name).toLowerCase()}`);
+    }
+    const cls = Object.keys(s).sort((a, b) => s[b] - s[a])[0];
+    return { cls, reasons: r[cls].sort((a, b) => b[0] - a[0]).slice(0, 2).map(x => x[1]) };
+  }
+  row(p, all) {
+    const c = this.classify(p, all), st = CLS[c.cls], cat = CATS.find(x => x.id === p.cat);
+    return {
+      id: p.id, name: p.name, amtStr: money(p.amt),
+      meta: [cat.short || cat.name, p.wallet, `${pad(p.hour)}:${pad(p.min)}`, p.mood].filter(Boolean).join(' · '),
+      cls: st.label, clsKey: c.cls, reasons: c.reasons, bg: st.bg, fg: st.fg, bd: st.bd,
+      onWhy: () => this.setState({ whyId: p.id }),
+    };
+  }
+  updatePurchase(id, patch) {
+    this.setState(s => ({ purchases: s.purchases.map(p => (p.id === id ? Object.assign({}, p, patch) : p)) }));
+  }
+  addPurchase(name, cat, amt, mood) {
+    const d = new Date(), id = 'n' + Date.now();
+    const p = { id, name, cat, amt, wallet: this.state.lastWallet, mood: mood || null, day: TODAY, hour: d.getHours(), min: d.getMinutes() };
+    this.setState(s => ({ purchases: [p].concat(s.purchases) }));
+    return id;
+  }
+  closeLog() { this.setState({ log: { open: false, mode: 'purchase', amt: '', savedId: null, savedIncome: null, hint: '' } }); }
+  setLog(patch) { this.setState(s => ({ log: Object.assign({}, s.log, patch) })); }
+  addContrib(label, amt) {
+    this.setState(s => ({ goal: Object.assign({}, s.goal, { contribs: s.goal.contribs.concat([{ label, amt, date: 'Today' }]) }) }));
+  }
+
+  renderVals() {
+    const S = this.state, P = S.purchases;
+    const empty = S.dataState === 'empty';
+    const purchases = empty ? [] : P;
+    const spent = purchases.reduce((a, p) => a + p.amt, 0);
+    const left = S.weekMoney - spent;
+    const pace = spent / 6;
+    const sunday = left - pace;
+    const rows = purchases.map(p => this.row(p, purchases));
+    const sortT = (a, b) => (b.hour * 60 + b.min) - (a.hour * 60 + a.min);
+    const today = purchases.filter(p => p.day === TODAY).sort(sortT);
+    const contribs = empty ? [] : S.goal.contribs;
+    const saved = contribs.reduce((a, c) => a + c.amt, 0);
+    const pct = Math.min(100, Math.round(saved / S.goal.target * 100));
+    const weeklySave = Math.max(1, saved / 4);
+    const etaDays = Math.ceil((S.goal.target - saved) / weeklySave * 7);
+    const eta = new Date(2026, 8, 26 + etaDays);
+    const goalEta = saved >= S.goal.target ? 'Reached' : `About ${eta.getDate()} ${eta.toLocaleString('en', { month: 'short' })}`;
+    const sel = on => ({ bg: on ? 'var(--color-text)' : 'transparent', fg: on ? 'var(--color-bg)' : 'var(--color-text)' });
+    const accSel = on => ({ bg: on ? 'var(--color-accent)' : 'transparent', fg: on ? '#fff' : 'var(--color-text)' });
+
+    // parking
+    const pk = empty ? [] : S.parking;
+    const pending = pk.filter(k => k.outcome === 'pending');
+    const decided = pk.filter(k => k.outcome !== 'pending');
+    const skipped = decided.filter(k => k.outcome === 'skipped');
+    const kept = skipped.reduce((a, k) => a + k.price, 0);
+    const saverLine = decided.length ? `You skipped ${skipped.length} of ${decided.length} parked items this month and kept ${money0(kept)}.` : 'Nothing decided yet this month.';
+    const ready = pending.filter(k => k.endsAt <= S.now);
+    const waiting = pending.filter(k => k.endsAt > S.now);
+    const leftStrOf = ms => { const m = Math.ceil(ms / 60000); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m left` : `${m}m left`; };
+    const decide = (k, outcome) => this.setState(s => ({ parking: s.parking.map(x => (x.id === k.id ? Object.assign({}, x, { outcome, date: 'Today' }) : x)) }));
+
+    // screen state
+    const scr = S.screen;
+    const showState = DATA_SCREENS.includes(scr) && S.dataState !== 'normal';
+    const titles = { home: 'Pocket Sense', transactions: 'Spending', insights: 'Insights', goals: 'Goal', parking: 'Parking lot' };
+    const emptyCopy = {
+      home: ['Nothing logged this week', 'Press + and type an amount, then tap a category. That is the whole log.', 'Log a purchase', () => { this.setState({ dataState: 'normal', purchases: [] }); this.setLog({ open: true }); }],
+      transactions: ['No purchases yet', 'Every purchase you log shows up here with its class: Need, Useful, Want or Invest.', 'Log a purchase', () => { this.setState({ dataState: 'normal', purchases: [] }); this.setLog({ open: true }); }],
+      insights: ['Learning your patterns', 'For your first 2 weeks you will see simple totals only. Patterns appear once there is enough data to be fair about them.', null, null],
+      goals: ['No goal yet', 'Pick one thing you are saving for. A photo and a price make it real.', 'Set a goal', () => this.setState({ dataState: 'normal', screen: 'onboarding', ob: Object.assign({}, S.ob, { step: 2 }) })],
+      parking: ['Nothing parked', 'When something tempts you, park it here and decide once the moment has passed.', 'Thinking of buying…', () => this.setState({ dataState: 'normal', screen: 'thinking' })],
+    };
+    let stateTitle = '', stateBody = '', stateAction = null, onStateAction = null;
+    if (showState) {
+      if (S.dataState === 'loading') { stateTitle = 'Opening your week…'; stateBody = 'Reading purchases saved on this phone.'; }
+      else if (S.dataState === 'error') { stateTitle = "Couldn't read your saved data"; stateBody = 'Your purchases are still on this phone. Nothing was deleted.'; stateAction = 'Try again'; onStateAction = () => this.setState({ dataState: 'normal' }); }
+      else { const c = emptyCopy[scr]; [stateTitle, stateBody, stateAction, onStateAction] = c; }
+    }
+    const on = k => scr === k && !showState;
+
+    // transactions
+    const counts = { all: rows.length };
+    ['need', 'useful', 'want', 'invest'].forEach(k => { counts[k] = rows.filter(r => r.clsKey === k).length; });
+    const filterChips = ['all', 'need', 'useful', 'want', 'invest'].map(k => Object.assign({
+      label: k === 'all' ? 'All' : CLS[k].label, count: counts[k], onClick: () => this.setState({ filter: k }),
+    }, sel(S.filter === k)));
+    const fRows = rows.filter(r => S.filter === 'all' || r.clsKey === S.filter);
+    const days = Object.keys(DAY_LABEL).concat(Array.from(new Set(purchases.map(p => p.day)))).filter((d, i, a) => a.indexOf(d) === i).sort().reverse();
+    const groups = days.map(d => {
+      const ps = purchases.filter(p => p.day === d).sort(sortT).map(p => fRows.find(r => r.id === p.id)).filter(Boolean);
+      return { label: DAY_LABEL[d] || d, totalStr: money(ps.reduce((a, r) => a + parseFloat(r.amtStr.slice(1)), 0)), rows: ps };
+    }).filter(g => g.rows.length);
+
+    // insights
+    const clsTotals = ['need', 'useful', 'want', 'invest'].map(k => ({ k, v: rows.filter(r => r.clsKey === k).reduce((a, r) => a + parseFloat(r.amtStr.slice(1)), 0) }));
+    const classBars = clsTotals.map(({ k, v }) => ({ label: CLS[k].label, amtStr: money(v), w: spent ? (v / spent * 100) + '%' : '0%', bg: k === 'useful' ? 'var(--color-neutral-300)' : CLS[k].bg === 'transparent' ? 'var(--color-bg)' : CLS[k].bg, bd: CLS[k].bd }));
+
+    // quick log
+    const L = S.log;
+    const amtNum = parseFloat(L.amt) || 0;
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'].map(k => ({
+      label: k === 'del' ? '⌫' : k, aria: k === 'del' ? 'Delete' : k,
+      onClick: () => {
+        let a = L.amt;
+        if (k === 'del') a = a.slice(0, -1);
+        else if (k === '.') { if (!a.includes('.')) a = (a || '0') + '.'; }
+        else if (/\.\d\d$/.test(a) || a.replace('.', '').length >= 7) return;
+        else a = (a === '0' ? '' : a) + k;
+        this.setLog({ amt: a, hint: '' });
+      },
+    }));
+    const saveCat = c => {
+      if (!amtNum) { this.setLog({ hint: 'Type an amount first, then tap a category.' }); return; }
+      const id = this.addPurchase(c.short || c.name, c.id, amtNum);
+      this.setLog({ savedId: id });
+    };
+    const catChips = CATS.map(c => ({ label: c.short || c.name, cls: CLS[c.cls].label, onClick: () => saveCat(c) }));
+    const repeatChips = [['Iced coffee', 'snacks', 4.5], ['Campus bus', 'transport', 1.25]].map(([n, c, a]) => ({
+      label: `${n} ${money(a)}`, onClick: () => { const id = this.addPurchase(n, c, a); this.setLog({ savedId: id, amt: String(a) }); },
+    }));
+    const incomeChips = INCOME_SRC.map(src => ({
+      label: src, onClick: () => {
+        if (!amtNum) { this.setLog({ hint: 'Type an amount first, then tap a source.' }); return; }
+        this.setState(s => ({ weekMoney: s.weekMoney + amtNum }));
+        this.setLog({ savedIncome: { src, amt: amtNum } });
+      },
+    }));
+    const savedP = L.savedId ? P.find(p => p.id === L.savedId) : null;
+    const savedRow = savedP ? this.row(savedP, P) : null;
+    if (savedRow) savedRow.weightLine = `About ${Math.max(1, Math.round(savedP.amt / S.weekMoney * 100))}% of your week`;
+    const moodChips = MOODS.map(m => Object.assign({ label: m, on: savedP && savedP.mood === m, onClick: () => this.updatePurchase(savedP.id, { mood: savedP.mood === m ? null : m }) }, sel(savedP && savedP.mood === m)));
+    const walletOpts = WALLETS.map(w => Object.assign({ label: w, on: savedP && savedP.wallet === w, onClick: () => { this.updatePurchase(savedP.id, { wallet: w }); this.setState({ lastWallet: w }); } }, accSel(savedP && savedP.wallet === w)));
+
+    // why sheet
+    let why = null;
+    const wp = S.whyId ? P.find(p => p.id === S.whyId) : null;
+    if (wp) {
+      const r = this.row(wp, P), cat = CATS.find(c => c.id === wp.cat);
+      const pred = this.classify(Object.assign({}, wp, { override: null }), P).cls;
+      why = {
+        name: wp.name, amtStr: r.amtStr, cls: r.cls, catName: cat.name,
+        reasons: r.reasons.map((t, i) => ({ n: i + 1, text: t })),
+        opts: ['need', 'useful', 'want', 'invest'].map(k => Object.assign({ label: CLS[k].label, on: r.clsKey === k, onClick: () => this.updatePurchase(wp.id, { override: k === pred ? null : k }) }, sel(r.clsKey === k))),
+        canRule: !!wp.override || S.rules[wp.cat] === r.clsKey && !!S.rules[wp.cat],
+        ruleOn: S.rules[wp.cat] === r.clsKey, ruleBox: S.rules[wp.cat] === r.clsKey ? 'var(--color-accent)' : 'transparent',
+      };
+    }
+
+    // thinking
+    const T = S.think, price = parseFloat(T.price) || 0;
+    const w = price / S.weekMoney * 100;
+    const weightLabel = w < 5 ? 'Small' : w < 15 ? 'Medium' : w < 30 ? 'Large' : 'Major';
+    const over = price > S.weekMoney * S.ob.threshold / 100;
+    const delay = Math.ceil(price / (weeklySave / 7));
+    const WAITS = { '1h': ['1 hour', 60], '24h': ['24 hours', 1440], '3d': ['3 days', 4320] };
+    const itemName = T.name.trim() || 'this';
+
+    // lookback
+    const LB = S.lookback;
+    const FEEL = { worth: 'Worth it', meh: 'Meh', regret: 'Regret it' };
+    const USE = { lots: 'Yes, a lot', few: 'A few times', none: 'Not yet' };
+    const lbResult = LB.feeling === 'regret' || LB.usage === 'none'
+      ? 'Clothing bought when you tagged Bored will lean Want from now on. You can always change a label.'
+      : 'Clothing like this stays Useful. Good buys count too.';
+
+    // onboarding
+    const O = S.ob;
+    const setOb = patch => this.setState(s => ({ ob: Object.assign({}, s.ob, patch) }));
+    const toggleIn = (key, v) => setOb({ [key]: O[key].includes(v) ? O[key].filter(x => x !== v) : O[key].concat([v]) });
+
+    return {
+      zoom: S.zoom, scrollRef: this.scrollRef, screenLabel: (SCREENS.find(s => s[0] === scr) || [0, scr])[1],
+      patternNames: this.props.patternNames ?? true,
+      showState, isLoading: S.dataState === 'loading', stateScreenTitle: titles[scr], stateTitle, stateBody, stateAction, onStateAction,
+      isHome: on('home'), isTransactions: on('transactions'), isInsights: on('insights'), isGoals: on('goals'), isParking: on('parking'),
+      isThinking: scr === 'thinking', isLookback: scr === 'lookback', isOnboarding: scr === 'onboarding',
+      showNav: ['home', 'transactions', 'insights', 'goals'].includes(scr),
+      goHome: () => this.go('home'), goTransactions: () => this.go('transactions'), goInsights: () => this.go('insights'), goGoals: () => this.go('goals'),
+      goThinking: () => this.go('thinking'), goParking: () => this.go('parking'), goLookback: () => this.go('lookback'),
+      navHome: scr === 'home' ? 'var(--color-accent-700)' : 'var(--color-text)', navHomeW: scr === 'home' ? 700 : 400, curHome: scr === 'home' ? 'page' : undefined,
+      navTx: scr === 'transactions' ? 'var(--color-accent-700)' : 'var(--color-text)', navTxW: scr === 'transactions' ? 700 : 400, curTx: scr === 'transactions' ? 'page' : undefined,
+      navIn: scr === 'insights' ? 'var(--color-accent-700)' : 'var(--color-text)', navInW: scr === 'insights' ? 700 : 400, curIn: scr === 'insights' ? 'page' : undefined,
+      navGo: scr === 'goals' ? 'var(--color-accent-700)' : 'var(--color-text)', navGoW: scr === 'goals' ? 700 : 400, curGo: scr === 'goals' ? 'page' : undefined,
+      toast: S.toast, toastBottom: ['home', 'transactions', 'insights', 'goals'].includes(scr) ? '80px' : '16px',
+
+      leftLabel: left >= 0 ? 'Left this week' : 'Over this week',
+      leftStr: money(Math.abs(left)), weekMoneyStr: money0(S.weekMoney),
+      spentPct: Math.min(100, spent / S.weekMoney * 100) + '%',
+      paceLine: left < 0 ? 'Rough week. Your goal is still ' + pct + '% there.' : sunday >= 0 ? `At this pace you'll have about ${money(sunday)} left on Sunday.` : `At this pace you'll run short by about ${money(-sunday)} on Sunday.`,
+      goal: S.goal, goalSavedStr: money0(saved), goalTargetStr: money0(S.goal.target), goalPctStr: pct + '%', goalCoverH: (100 - pct) + '%', goalEta,
+      parkingSummary: ready.length ? `${ready.length} ready to decide` : waiting.length ? `${waiting.length} waiting` : 'Empty',
+      lookbackPending: !LB.usage && !empty,
+      todayRows: today.map(p => rows.find(r => r.id === p.id)), todayEmpty: today.length === 0,
+      todayTotalStr: money(today.reduce((a, p) => a + p.amt, 0)),
+
+      filterChips, groups, txEmpty: groups.length === 0,
+      classBars, saverLine,
+      whyHappensOpen: S.whyHappens, whyHappensLabel: S.whyHappens ? 'Hide why this happens' : 'Why this happens',
+      toggleWhyHappens: () => this.setState({ whyHappens: !S.whyHappens }),
+      commitLabel: S.committed ? 'Committed for this week' : 'Commit to this', commitBg: S.committed ? '#fff' : 'transparent', commitFg: S.committed ? 'var(--color-accent-800)' : '#fff',
+      toggleCommit: () => { this.setState({ committed: !S.committed }); if (!S.committed) this.toast("Got it. We'll remind you at 10pm."); },
+
+      addOpen: S.addOpen, toggleAdd: () => this.setState({ addOpen: !S.addOpen }),
+      addAmounts: [5, 10, 20].map(a => ({ label: '$' + a, onClick: () => { this.addContrib('Added', a); this.setState({ addOpen: false }); this.toast(`$${a} added to ${S.goal.name}.`); } })),
+      contribRows: contribs.slice().reverse().map(c => ({ label: c.label, date: c.date, amtStr: money0(c.amt) })),
+
+      think: T, hasPrice: price > 0, noPrice: price <= 0, saleBox: T.sale ? 'var(--color-accent)' : 'transparent',
+      onThinkName: e => this.setState({ think: Object.assign({}, T, { name: e.target.value }) }),
+      onThinkPrice: e => this.setState({ think: Object.assign({}, T, { price: e.target.value.replace(/[^0-9.]/g, '') }) }),
+      toggleSale: () => this.setState({ think: Object.assign({}, T, { sale: !T.sale }) }),
+      weightLabel, weightStr: Math.round(w) + '%',
+      delayLine: saved >= S.goal.target ? '' : `Buying ${itemName} pushes your ${S.goal.name.toLowerCase()} back about ${delay} day${delay === 1 ? '' : 's'}.`,
+      overLine: over, underLine: !over, thresholdStr: S.ob.threshold + '%',
+      waitOpts: Object.keys(WAITS).map(k => Object.assign({ label: k, on: T.wait === k, onClick: () => this.setState({ think: Object.assign({}, T, { wait: k }) }) }, accSel(T.wait === k))),
+      waitLabel: WAITS[T.wait][0],
+      parkIt: () => {
+        const name = T.name.trim() || 'Unnamed item';
+        this.setState(s => ({ parking: [{ id: 'k' + Date.now(), name, price, endsAt: Date.now() + WAITS[T.wait][1] * 60000, outcome: 'pending' }].concat(s.parking), think: { name: '', price: '', wait: '24h', sale: false }, dataState: 'normal' }));
+        this.go('parking'); this.toast(`Parked. We'll ask again in ${WAITS[T.wait][0]}.`);
+      },
+      buyNow: () => {
+        this.addPurchase(T.name.trim() || 'Purchase', 'clothing', price);
+        this.setState({ think: { name: '', price: '', wait: '24h', sale: false } });
+        this.go('home'); this.toast(`Logged ${money(price)}.`);
+      },
+
+      readyItems: ready.map(k => ({
+        name: k.name, priceStr: money(k.price),
+        onSkip: () => { decide(k, 'skipped'); this.addContrib(`Skipped: ${k.name}`, k.price); this.toast(`${money0(k.price)} kept and added to ${S.goal.name}.`); },
+        onWait: () => { this.setState(s => ({ parking: s.parking.map(x => (x.id === k.id ? Object.assign({}, x, { endsAt: Date.now() + 1440 * 60000 }) : x)) })); this.toast('Parked for another 24 hours.'); },
+        onBuy: () => { decide(k, 'bought'); this.addPurchase(k.name[0].toUpperCase() + k.name.slice(1), 'clothing', k.price); this.toast(`Logged ${money(k.price)}. No judgement.`); },
+      })),
+      waitingItems: waiting.map(k => ({ name: k.name, priceStr: money(k.price), weightStr: Math.round(k.price / S.weekMoney * 100) + '%', leftStr: leftStrOf(k.endsAt - S.now) })),
+      noWaiting: waiting.length === 0,
+      historyItems: decided.map(k => Object.assign({ name: k.name[0].toUpperCase() + k.name.slice(1), priceStr: money(k.price), date: k.date, outcome: k.outcome === 'skipped' ? 'Skipped' : 'Bought' },
+        k.outcome === 'skipped' ? { bg: 'var(--color-text)', fg: 'var(--color-bg)', bd: 'var(--color-text)' } : { bg: 'transparent', fg: 'var(--color-text)', bd: 'var(--color-text)' })),
+
+      lbAskFeeling: !LB.feeling, lbAskUsage: !!LB.feeling && !LB.usage, lbDone: !!LB.usage,
+      lbFeelingLabel: FEEL[LB.feeling] || '', lbResult,
+      lbFeelings: Object.keys(FEEL).map(k => ({ label: FEEL[k], onClick: () => this.setState({ lookback: { feeling: k, usage: null } }) })),
+      lbUsages: Object.keys(USE).map(k => ({ label: USE[k], onClick: () => this.setState({ lookback: { feeling: LB.feeling, usage: k } }) })),
+
+      ob: O, obStepNum: O.step + 1, ob0: O.step === 0, ob1: O.step === 1, ob2: O.step === 2, ob3: O.step === 3, obCanBack: O.step > 0,
+      obBars: [0, 1, 2, 3].map(i => ({ bg: i <= O.step ? 'var(--color-accent)' : 'var(--color-neutral-300)' })),
+      obIncomeChips: INCOME_SRC.map(v => Object.assign({ label: v, on: O.income.includes(v), onClick: () => toggleIn('income', v) }, sel(O.income.includes(v)))),
+      obWalletChips: ['Cash', 'E-wallet', 'Debit card', "Parent's card"].map(v => Object.assign({ label: v, on: O.wallets.includes(v), onClick: () => toggleIn('wallets', v) }, sel(O.wallets.includes(v)))),
+      onObGoalName: e => setOb({ goalName: e.target.value }),
+      onObGoalPrice: e => setOb({ goalPrice: e.target.value.replace(/[^0-9.]/g, '') }),
+      obThresholds: [10, 15, 25].map(t => Object.assign({ label: t + '%', on: O.threshold === t, onClick: () => setOb({ threshold: t }) }, accSel(O.threshold === t))),
+      obThresholdLine: `Anything over ${money0(S.weekMoney * O.threshold / 100)} of a ${money0(S.weekMoney)} week gets a cooldown suggestion.`,
+      obBack: () => setOb({ step: O.step - 1 }),
+      obNextLabel: O.step === 2 && !O.goalName.trim() ? 'Skip for now' : O.step === 3 ? 'Start logging' : 'Continue',
+      obNext: () => {
+        if (O.step < 3) return setOb({ step: O.step + 1 });
+        const target = parseFloat(O.goalPrice);
+        if (O.goalName.trim() && target > 0) this.setState(s => ({ goal: Object.assign({}, s.goal, { name: O.goalName.trim(), target }) }));
+        setOb({ step: 0 }); this.go('home'); this.toast('All set. Press + to log your first purchase.');
+      },
+
+      logOpen: L.open, openLog: () => this.setLog({ open: true }), closeLog: () => this.closeLog(),
+      modePurchase: L.mode === 'purchase', modeIncome: L.mode === 'income',
+      setModePurchase: () => this.setLog({ mode: 'purchase', hint: '' }), setModeIncome: () => this.setLog({ mode: 'income', hint: '' }),
+      modePBg: L.mode === 'purchase' ? 'var(--color-text)' : 'transparent', modePFg: L.mode === 'purchase' ? 'var(--color-bg)' : 'var(--color-text)',
+      modeIBg: L.mode === 'income' ? 'var(--color-text)' : 'transparent', modeIFg: L.mode === 'income' ? 'var(--color-bg)' : 'var(--color-text)',
+      logEntry: !L.savedId && !L.savedIncome, logSavedPurchase: !!savedRow, logSavedIncome: !!L.savedIncome,
+      logAmtShown: L.amt || '0', amtColor: L.amt ? 'var(--color-text)' : 'var(--color-neutral-500)',
+      logHint: L.hint || (amtNum ? `About ${Math.max(1, Math.round(amtNum / S.weekMoney * 100))}% of your week` : (L.mode === 'purchase' ? 'Type an amount, then tap a category' : 'Type an amount, then tap where it came from')),
+      keys, catChips, repeatChips, incomeChips, saved: savedRow || {}, moodChips, walletOpts,
+      savedIncomeLine: L.savedIncome ? `${money(L.savedIncome.amt)} from ${L.savedIncome.src}` : '',
+
+      whyOpen: !!why, why: why || { reasons: [], opts: [] }, closeWhy: () => this.setState({ whyId: null }),
+      toggleRule: () => {
+        if (!wp) return;
+        const r = this.row(wp, P);
+        this.setState(s => {
+          const rules = Object.assign({}, s.rules);
+          if (rules[wp.cat] === r.clsKey) delete rules[wp.cat]; else rules[wp.cat] = r.clsKey;
+          return { rules };
+        });
+      },
+
+      panelScreens: SCREENS.map(([k, label]) => Object.assign({ label, on: scr === k, onClick: () => this.go(k) }, sel(scr === k))),
+      stateOpts: [['normal', 'Normal'], ['empty', 'Empty'], ['loading', 'Loading'], ['error', 'Error']].map(([k, label]) => Object.assign({ label, on: S.dataState === k, onClick: () => this.setState({ dataState: k }) }, accSel(S.dataState === k))),
+      resetAll: () => { clearTimeout(this.toastT); this.setState(Object.assign(init('home'), { zoom: S.zoom })); if (this.scrollRef.current) this.scrollRef.current.scrollTop = 0; },
+    };
+  }
+}
+</script>
+</body>
+</html>

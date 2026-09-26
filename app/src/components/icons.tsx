@@ -1,0 +1,31 @@
+// Lucide icon paths (lucide.dev), inlined so the app needs no icon package.
+import type { ReactNode } from 'react';
+
+function Icon({ size = 22, width = 2, cap = 'round', children }: { size?: number; width?: number; cap?: 'round' | 'square'; children: ReactNode }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={width}
+      strokeLinecap={cap} strokeLinejoin="round" aria-hidden="true">
+      {children}
+    </svg>
+  );
+}
+
+export const ArrowLeft = () => <Icon><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></Icon>;
+export const X = () => <Icon><path d="M18 6 6 18" /><path d="m6 6 12 12" /></Icon>;
+export const Plus = () => <Icon size={28} width={2.5} cap="square"><path d="M5 12h14" /><path d="M12 5v14" /></Icon>;
+export const House = () => (
+  <Icon>
+    <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+    <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+  </Icon>
+);
+export const List = () => <Icon><path d="M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13" /></Icon>;
+export const Chart = () => <Icon><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></Icon>;
+export const Target = () => <Icon><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></Icon>;
+export const ImagePlus = () => (
+  <Icon size={20} width={1.75}>
+    <path d="M16 5h6" /><path d="M19 2v6" />
+    <path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5" />
+    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /><circle cx="9" cy="9" r="2" />
+  </Icon>
+);

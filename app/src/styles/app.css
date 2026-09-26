@@ -1,0 +1,198 @@
+/* Pocket Sense layout and shared patterns. Colors and type come from ds.css tokens. */
+
+html, body, #root { height: 100%; }
+body { background: var(--color-neutral-200); -webkit-tap-highlight-color: transparent; }
+button { font-family: inherit; }
+a { color: var(--color-accent-700); }
+a:hover { color: var(--color-accent-800); }
+
+.app {
+  position: relative; height: 100%; max-width: 480px; margin: 0 auto;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--color-bg); color: var(--color-text); font-family: var(--font-body);
+}
+@media (min-width: 520px) {
+  .app { border-left: 2px solid var(--color-divider); border-right: 2px solid var(--color-divider); }
+}
+.scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+.screen { display: flex; flex-direction: column; }
+.screen-fill { display: flex; flex-direction: column; min-height: 100%; }
+
+/* — type — */
+.muted { color: var(--color-neutral-700); }
+.t11 { font-size: 11px; } .t12 { font-size: 12px; } .t13 { font-size: 13px; } .t14 { font-size: 14px; }
+.t15 { font-size: 15px; } .t16 { font-size: 16px; } .t18 { font-size: 18px; } .t20 { font-size: 20px; }
+.w6 { font-weight: 600; } .w8 { font-weight: 800; }
+.accent-text { color: var(--color-accent-700); }
+.pretty { text-wrap: pretty; }
+.big-title { font-size: 36px; font-weight: 800; line-height: 1.05; text-wrap: pretty; padding-top: 24px; }
+.page-title { font-size: 24px; font-weight: 800; }
+
+/* — structure — */
+.rule { height: 2px; flex: none; background: var(--color-divider); }
+.pad { padding: 20px; }
+.stack { display: flex; flex-direction: column; }
+.grow { flex: 1; }
+.page-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 16px 20px 12px;
+}
+.section-title { padding: 20px 20px 8px; font-size: 16px; font-weight: 800; }
+.row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  padding: 12px 20px; border-top: 1px solid var(--color-neutral-300);
+}
+.row-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.row-title { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.row-meta { font-size: 12px; color: var(--color-neutral-700); }
+.row-end { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.bar { height: 8px; background: var(--color-neutral-300); position: relative; }
+.bar > span { position: absolute; left: 0; top: 0; bottom: 0; background: var(--color-text); }
+.surface { background: var(--color-surface); }
+
+/* — top bars — */
+.back-bar {
+  display: flex; align-items: center; gap: 4px; padding: 4px 8px; min-height: 56px;
+  border-bottom: 2px solid var(--color-divider);
+}
+.back-bar-title { font-size: 18px; font-weight: 800; flex: 1; }
+.icon-btn {
+  width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center;
+  border: 0; padding: 0; background: transparent; cursor: pointer; color: var(--color-text);
+}
+
+/* — buttons (sizes the design uses on top of .btn) — */
+.btn { justify-content: flex-start; text-align: left; }
+.btn-lg { min-height: 52px; padding: 0 20px; font-size: 16px; }
+.btn-md { min-height: 48px; padding: 0 20px; font-size: 15px; }
+.btn-link { min-height: 44px; align-self: flex-start; padding: 0 4px; font-size: 14px; color: var(--color-accent-700); }
+.self-start { align-self: flex-start; }
+
+/* A plain toggle button that turns ink-filled when pressed (chips, class picks). */
+.choice {
+  min-height: 44px; padding: 0 12px; font-size: 14px; cursor: pointer; text-align: left;
+  border: 1px solid var(--color-text); background: transparent; color: var(--color-text);
+}
+.choice[aria-pressed='true'], .choice[aria-current='true'] { background: var(--color-text); color: var(--color-bg); }
+
+/* Segmented radio row: equal cells, the checked one filled with the accent. */
+.seg-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border: 1px solid var(--color-divider); }
+.seg-grid > button {
+  min-height: 48px; padding: 0 6px; border: 0; border-right: 1px solid var(--color-divider);
+  cursor: pointer; font-size: 15px; background: transparent; color: var(--color-text);
+}
+.seg-grid > button:last-child { border-right: 0; }
+.seg-grid > button[aria-checked='true'] { background: var(--color-accent); color: #fff; }
+.seg-grid.ink > button[aria-checked='true'] { background: var(--color-text); color: var(--color-bg); }
+.seg-grid.ink > button { min-height: 40px; padding: 0 14px; font-size: 14px; }
+
+/* Checkbox drawn as a square. */
+.check {
+  display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0; border: 0;
+  background: transparent; cursor: pointer; font-size: 15px; color: var(--color-text); text-align: left;
+}
+.check-box { width: 22px; height: 22px; flex: none; border: 2px solid var(--color-text); background: transparent; }
+.check[aria-pressed='true'] .check-box { background: var(--color-accent); }
+
+.cls-badge {
+  min-height: 28px; padding: 2px 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid;
+}
+.tag-box { font-size: 12px; font-weight: 600; padding: 3px 8px; border: 1px solid; }
+
+.field > label { font-size: 13px; }
+.input-lg { min-height: 48px; font-size: 16px; }
+
+/* — bottom nav — */
+.nav-bar {
+  flex: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: stretch;
+  border-top: 2px solid var(--color-text); background: var(--color-bg); min-height: 64px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  border: 0; background: transparent; cursor: pointer; font-size: 11px; color: var(--color-text); font-weight: 400;
+}
+.nav-item[aria-current='page'] { color: var(--color-accent-700); font-weight: 700; }
+.nav-log {
+  width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+  border: 0; cursor: pointer; background: var(--color-accent); color: #fff;
+}
+
+/* — sheets and toast — */
+.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+.backdrop { position: absolute; inset: 0; background: color-mix(in srgb, var(--color-text) 45%, transparent); animation: fade 0.15s ease-out; }
+.sheet {
+  position: relative; background: var(--color-bg); border-top: 2px solid var(--color-text);
+  max-height: 94%; overflow-y: auto; display: flex; flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom); animation: rise 0.18s ease-out;
+}
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { transform: translateY(24px); opacity: 0.6; } }
+@media (prefers-reduced-motion: reduce) { .backdrop, .sheet { animation: none; } }
+
+.toast {
+  position: absolute; left: 16px; right: 16px; z-index: 15;
+  background: var(--color-text); color: var(--color-bg); padding: 14px 16px; font-size: 14px; line-height: 1.4;
+}
+
+/* — quick log grids — */
+.cat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 2px solid var(--color-divider); }
+.cat-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cat-cell {
+  min-height: 60px; padding: 8px 10px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  gap: 2px; text-align: left; border: 0; border-right: 1px solid var(--color-neutral-300);
+  border-bottom: 1px solid var(--color-neutral-300); background: transparent; cursor: pointer; color: var(--color-text);
+}
+.keypad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--color-neutral-300); border-top: 2px solid var(--color-divider); }
+.key {
+  min-height: 54px; border: 0; background: var(--color-bg); cursor: pointer; font-size: 22px; font-weight: 600;
+  color: var(--color-text); display: flex; align-items: center; justify-content: center;
+}
+.repeat-chip {
+  flex: none; min-height: 44px; padding: 0 12px; font-size: 13px; cursor: pointer;
+  border: 1px dashed var(--color-text); background: transparent; color: var(--color-text);
+}
+.hscroll { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.hscroll::-webkit-scrollbar { display: none; }
+
+/* — red statement blocks — */
+.red-block { background: var(--color-accent-700); color: #fff; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.on-red {
+  min-height: 48px; padding: 0 12px; text-align: left; font-size: 15px; cursor: pointer;
+  border: 2px solid #fff; background: transparent; color: #fff;
+}
+.on-red.solid, .on-red[aria-pressed='true'] { background: #fff; color: var(--color-accent-800); }
+.on-red:focus-visible { outline-color: #fff; }
+
+/* — goal photo — */
+.photo { position: relative; overflow: hidden; }
+.photo img { width: 100%; height: 100%; object-fit: cover; }
+.photo-empty {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px; text-align: center; font-size: 12px; color: var(--color-neutral-700);
+  background: rgba(127, 127, 127, 0.08); border: 1.5px dashed var(--color-neutral-500);
+}
+.photo-cover { position: absolute; left: 0; right: 0; top: 0; background: color-mix(in srgb, var(--color-bg) 70%, transparent); pointer-events: none; transition: height 0.4s ease; }
+.photo-btn { position: absolute; inset: 0; border: 0; padding: 0; background: transparent; cursor: pointer; }
+.photo-btn:focus-visible { outline-offset: -3px; }
+.photo.dragging .photo-empty { border-color: var(--color-accent); background: var(--color-accent-100); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Hover tints only where there is a real pointer; phones would keep them stuck after a tap. */
+@media (hover: hover) {
+  .icon-btn:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+  .choice:not([aria-pressed='true']):not([aria-current='true']):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+  .seg-grid > button:not([aria-checked='true']):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+  .cls-badge:hover { filter: brightness(0.95); }
+  .nav-item:hover { background: color-mix(in srgb, var(--color-text) 5%, transparent); }
+  .nav-log:hover { background: var(--color-accent-600); }
+  .cat-cell:hover { background: var(--color-surface); }
+  .repeat-chip:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+  .on-red:not(.solid):not([aria-pressed='true']):hover { background: color-mix(in srgb, #fff 12%, transparent); }
+}
+
+/* Pressed states come last so they beat hover. */
+.icon-btn:active, .choice:not([aria-pressed='true']):active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+.nav-log:active { background: var(--color-accent-700); }
+.cat-cell:active { background: var(--color-accent-100); }
+.key:active { background: var(--color-neutral-300); }
