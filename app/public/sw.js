@@ -1,6 +1,8 @@
 // Offline support: serve the app shell from cache, refresh it in the background.
 // All user data lives in localStorage, so nothing here touches it.
-const CACHE = 'pocket-sense-v1';
+const CACHE = 'pocket-sense-v2';
+// The app's home page, e.g. https://example.com/ or https://user.github.io/PocketSense/
+const HOME = self.registration.scope;
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => {
@@ -17,10 +19,10 @@ self.addEventListener('fetch', e => {
   const isPage = req.mode === 'navigate';
   e.respondWith(
     caches.open(CACHE).then(async cache => {
-      const cached = await cache.match(isPage ? '/' : req);
+      const cached = await cache.match(isPage ? HOME : req);
       const fresh = fetch(req)
         .then(res => {
-          if (res.ok) cache.put(isPage ? '/' : req, res.clone());
+          if (res.ok) cache.put(isPage ? HOME : req, res.clone());
           return res;
         })
         .catch(() => cached);

@@ -1,0 +1,8 @@
+# Local secrets. Only .env.example (empty placeholders) is committed.
+.env
+.env.*
+!.env.example
+*.local
+# Supabase CLI working files
+supabase/.temp/
+supabase/.branches/

@@ -1,108 +1,87 @@
 # Setting up accounts and sync
 
-Pocket Sense works without any of this: with no Supabase settings, the app hides every account feature and keeps everything on the phone. Follow these steps when you want sign-in and phone ↔ PC sync to work for real.
+Pocket Sense works without any of this. With no Supabase settings, the app hides every account feature and keeps everything on the phone. This page covers turning sign-in and phone ↔ PC sync on.
 
-You need four free accounts: **Supabase** (database and sign-in), **Resend** (sends emails), **Google Cloud** (only for "Continue with Google") and wherever you host the app (Netlify, Vercel, Cloudflare Pages…).
+## Already done
 
-Plan for about an hour the first time. Do the steps in order.
+- A Supabase project called **Pocket Sense** (free plan, Singapore).
+- The database: all three files in [`supabase/migrations/`](../supabase/migrations/) are applied, including the daily job that erases deleted accounts.
+- The three email functions (`request-consent`, `approve-consent`, `delete-account`) are deployed.
+- [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml) builds the app from the GitHub secrets and publishes it to GitHub Pages on every push to `main`.
 
-## 1. Create the Supabase project
+## Where the keys live (and why nothing leaks)
 
-1. Go to [supabase.com](https://supabase.com), sign up, and click **New project**.
-2. Pick a region close to your users (for Indonesia: **Southeast Asia (Singapore)**).
-3. Save the database password somewhere safe. You won't need it in the app.
+| Value | Secret? | Where it goes |
+| --- | --- | --- |
+| Project URL (`https://<ref>.supabase.co`) | No | GitHub secret `VITE_SUPABASE_URL`, or your own `app/.env.local` |
+| Publishable key (`sb_publishable_…`) | No, it's made to be public | GitHub secret `VITE_SUPABASE_PUBLISHABLE_KEY`, or your own `app/.env.local` |
+| Resend API key (`re_…`) | **Yes** | Supabase → Edge Functions → Secrets only |
+| `service_role` / secret key | **Yes, the most dangerous one** | Nowhere. Supabase gives it to the functions automatically. Never put it in the app, GitHub or chat. |
 
-## 2. Create the tables and rules
+Both app values end up inside the built JavaScript that every visitor downloads. That's normal: the database rules (RLS and the checked functions) are what protect the data, not these keys. They're kept in GitHub secrets so they aren't copied into the code.
 
-1. In the dashboard, open **Database → Extensions**, search for **pg_cron** and enable it. This runs the daily job that erases accounts 7 days after deletion.
-2. Open **SQL Editor → New query**. Paste all of [`supabase/migrations/20260930000000_accounts.sql`](../supabase/migrations/20260930000000_accounts.sql) and click **Run**.
-3. Do the same with [`supabase/migrations/20260930000100_erase_deleted_accounts.sql`](../supabase/migrations/20260930000100_erase_deleted_accounts.sql).
+`.gitignore` blocks `.env`, `.env.*` and `*.local` everywhere, so `git push` can't upload them. Only `app/.env.example` (empty placeholders) is committed.
 
-What this creates:
+## Your steps (about 15 minutes)
 
-| Table | Holds |
-| --- | --- |
-| `profiles` | Birth year, parent approval, deletion date (one row per user) |
-| `user_data` | The app data as one JSON document per user, plus a version number (`rev`) |
-| `consent_requests` | Parent approval links (only a hash of each link is stored) |
+### 1. Add the two GitHub secrets
 
-The app can only **read** its own rows. All writes go through database functions that check the rules (`push_data` refuses to save anything for an under-18 user until a parent approves).
+GitHub → the PocketSense repo → **Settings → Secrets and variables → Actions → New repository secret**. Add:
 
-## 3. Sign-in settings
+- `VITE_SUPABASE_URL`: from Supabase → Project Settings → API → Project URL
+- `VITE_SUPABASE_PUBLISHABLE_KEY`: from Supabase → Project Settings → API Keys → the **publishable** key
 
-In **Authentication → URL Configuration**:
+### 2. Turn on GitHub Pages
 
-- **Site URL**: your app's address, for example `https://pocketsense.netlify.app`
-- **Redirect URLs**: add the same address, and `http://localhost:5173` for testing on your computer
+GitHub → **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
-In **Authentication → Providers → Email**:
+After the next push to `main` (merging the PR counts), the app is at `https://wilboards.github.io/PocketSense/`. The run shows under the **Actions** tab.
 
-- Keep **Confirm email** on. New users get a link to confirm their address before they can sign in.
-- Set **Minimum password length** to 8 (the app asks for 8 too).
+### 3. Tell Supabase where the app lives
 
-## 4. Emails through Resend
+Supabase → **Authentication → URL Configuration**:
 
-1. Sign up at [resend.com](https://resend.com).
-2. **Verify a domain** (Domains → Add domain), then add the DNS records it shows you. Until you do, Resend only sends to *your own* email address, so parents and other users get nothing. If you don't own a domain, a cheap one works fine.
-3. Create an **API key** (API Keys → Create).
-4. Make Supabase send its own emails (confirm email, password reset) through Resend. In Supabase, open **Authentication → Emails → SMTP Settings** and enable custom SMTP:
-   - Host `smtp.resend.com`, port `465`, username `resend`, password: your Resend API key
-   - Sender email: an address on your verified domain, such as `hello@yourdomain.com`
+- **Site URL**: `https://wilboards.github.io/PocketSense/`
+- **Redirect URLs**: add `https://wilboards.github.io/PocketSense/` and `http://localhost:5173/`
 
-## 5. Continue with Google (optional)
+Without this, the confirm-email and password-reset links send people to the wrong place.
 
-1. In [Google Cloud Console](https://console.cloud.google.com), create a project, then go to **APIs & Services → OAuth consent screen** and fill it in.
-2. **Credentials → Create credentials → OAuth client ID → Web application**.
-   Under **Authorized redirect URIs**, add `https://<your-project-ref>.supabase.co/auth/v1/callback` (Supabase shows the exact address on its Google provider page).
-3. Copy the client ID and secret into Supabase **Authentication → Providers → Google** and enable it.
+### 4. Give the email functions their secrets
 
-If you skip this, the "Continue with Google" button shows an error. Email sign-in still works.
+1. Sign in at [resend.com](https://resend.com) → **API Keys → Create API key** (permission: Sending access). Copy it.
+2. Supabase → **Edge Functions → Secrets** (Manage secrets), add:
+   - `RESEND_API_KEY`: the key from Resend
+   - `EMAIL_FROM`: `Pocket Sense <onboarding@resend.dev>` for testing
+   - `APP_URL`: `https://wilboards.github.io/PocketSense/`
 
-## 6. Deploy the email functions
+Two limits while testing:
+- **Resend** only delivers to your own email address until you verify a domain (Resend → Domains). Parent-approval tests must use your own address as the "parent".
+- **Supabase's built-in email** (confirm email, password reset) only sends to members of your Supabase organization, a few per hour. That's you, so testing works. For real users, set up custom SMTP with Resend (Authentication → Emails → SMTP: host `smtp.resend.com`, port `465`, user `resend`, password = a Resend API key) once you have a verified domain.
 
-These three small server functions send the parent-approval and account-deletion emails.
+### 5. Optional: Continue with Google
 
-```bash
-cd PocketSense            # the repo root, where the supabase/ folder is
-npx supabase login
-npx supabase link --project-ref <your-project-ref>
+In [Google Cloud Console](https://console.cloud.google.com) create an OAuth client (Web application) with the redirect URI shown on Supabase → Authentication → Providers → Google, then paste the client ID and secret there. Until you do, the Google button shows an error; email sign-in works.
 
-npx supabase secrets set RESEND_API_KEY=re_xxx
-npx supabase secrets set EMAIL_FROM="Pocket Sense <hello@yourdomain.com>"
-npx supabase secrets set APP_URL=https://pocketsense.netlify.app
+## Test on your computer instead
 
-npx supabase functions deploy request-consent
-npx supabase functions deploy approve-consent
-npx supabase functions deploy delete-account
-```
+Copy `app/.env.example` to `app/.env.local`, fill in the two values from step 1, then `cd app && npm run dev`. `.env.local` is ignored by git.
 
-`approve-consent` has to work for parents who don't have an account. `supabase/config.toml` already turns off its session check. The one-time token in the email link is checked instead.
+## Check it works
 
-## 7. Connect the app
-
-1. In Supabase, open **Project Settings → API Keys** and copy the **Project URL** and the **publishable** key (older projects call it the `anon` key). Both are meant to be public. **Never** put the `service_role` / secret key in the app.
-2. In `app/`, copy `.env.example` to `.env.local` and fill them in:
-   ```
-   VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
-   VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
-   ```
-3. On your host (Netlify / Vercel / Cloudflare Pages), add the same two variables under the site's environment variables, then redeploy.
-
-`.env.local` is ignored by git, so it won't be committed.
-
-## 8. Check it works
-
-Run `npm run dev` in `app/` and go through this list:
-
-- [ ] Home shows "Sign in to use Pocket Sense on your PC". Create an account with a birth year over 18 → confirm email → the upload screen says "All copied".
-- [ ] In Supabase **Table Editor → user_data** there is one row with your purchases.
-- [ ] Open the app in a second browser, tap "I already have an account" on the first onboarding step, and sign in. It shows the same purchases.
-- [ ] Turn off Wi-Fi, log something: the header says "Offline · 1 change waiting". Turn it back on: "Synced".
-- [ ] Create a second account with a birth year under 18. You get "Ask a parent to approve". Send it to an email you can open, approve it, then reopen the app. It copies the data.
+- [ ] Home shows "Sign in to use Pocket Sense on your PC". Create an account with a birth year over 18 → open the confirm link in the email → the upload screen says "All copied".
+- [ ] Supabase → Table Editor → `user_data` has one row.
+- [ ] Open the app in a second browser, tap "I already have an account" on the first onboarding step and sign in: the same purchases appear.
+- [ ] Turn off Wi-Fi and log something: "Offline · 1 change waiting". Turn it back on: "Synced".
+- [ ] Create a second account with a birth year under 18 and use **your own email** as the parent: you get the approval email, approve it, reopen the app, and it copies the data.
 - [ ] Settings → Delete account → sign in again → "Keep your account?" → Restore.
+
+## Changing the database later
+
+Add a new file to `supabase/migrations/` (never edit one that's already applied), then apply it with the Supabase CLI (`npx supabase db push`) or ask Claude to apply it through the Supabase MCP.
 
 ## Before real users sign up
 
 - Replace `[date]` and `[contact email]` in the privacy policy (`app/src/screens/Account.tsx`, `POLICY_UPDATED` and `CONTACT_EMAIL`).
-- The privacy policy and the under-18 approval flow follow the design. They are **not legal advice**. If this becomes a real product, ask someone who knows Indonesia's UU PDP to check them.
+- Verify a domain in Resend and switch `EMAIL_FROM` to it, so parents can actually get emails.
+- The privacy policy and the under-18 flow follow the design. They are **not legal advice**. Ask someone who knows Indonesia's UU PDP before this becomes a real product.
 - The goal photo is not synced. It stays on the device where you added it.
