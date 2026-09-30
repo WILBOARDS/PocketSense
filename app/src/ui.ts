@@ -1,6 +1,8 @@
 import { createContext, useContext } from 'react';
 
-export type Screen = 'home' | 'transactions' | 'insights' | 'goals' | 'thinking' | 'parking' | 'lookback' | 'goal-setup';
+export type Screen = 'home' | 'transactions' | 'insights' | 'goals' | 'thinking' | 'parking' | 'lookback' | 'goal-setup'
+  // Account screens
+  | 'settings' | 'signin' | 'forgot' | 'verify' | 'new-password' | 'consent' | 'upload' | 'restore' | 'delete' | 'privacy';
 
 export interface LogPrefill {
   amt?: number;

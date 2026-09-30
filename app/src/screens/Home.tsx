@@ -1,5 +1,7 @@
 import { PurchaseRow, StateView } from '../components/common';
 import { GoalPhoto } from '../components/GoalPhoto';
+import { Gear, XSmall } from '../components/icons';
+import { useAccount } from '../lib/account';
 import { dayKey, shortDate } from '../lib/dates';
 import { goalStats, parkingStats, pendingLookbacks, weekStats } from '../lib/derive';
 import { money, money0, plural } from '../lib/format';
@@ -9,9 +11,17 @@ import { newestFirst, toRows } from './rows';
 
 export function Home() {
   const { data } = useData();
-  const { now, go, openLog, openWhy } = useUi();
+  const { now, go, openLog, openWhy, toast } = useUi();
+  const acc = useAccount();
 
   if (data.purchases.length === 0 && data.parking.length === 0) {
+    if (acc.enabled && acc.local.wiped && acc.status === 'out') {
+      return (
+        <StateView title="Pocket Sense" heading="This phone is cleared"
+          body="Sign in to bring your data back, or start fresh by logging a purchase."
+          action="Sign in" onAction={() => go('signin')} />
+      );
+    }
     return (
       <StateView title="Pocket Sense" heading="Nothing logged this week"
         body="Press + and type an amount, then tap a category. That is the whole log."
@@ -35,10 +45,27 @@ export function Home() {
 
   return (
     <div className="screen">
-      <div className="page-head">
-        <div className="t18 w8">Pocket Sense</div>
-        <div className="t13 muted">{shortDate(now)}</div>
-      </div>
+      {acc.enabled ? (
+        <div className="home-head">
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <div className="t18 w8">Pocket Sense</div>
+            <div className="t12 muted" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>{shortDate(now)}</span>
+              {acc.sync.label && <>
+                <span aria-hidden="true">·</span>
+                <span className="sync-dot" style={{ background: acc.sync.dot }} />
+                <span role="status" style={{ color: acc.sync.fg }}>{acc.sync.label}</span>
+              </>}
+            </div>
+          </div>
+          <button className="icon-btn" aria-label="Settings" onClick={() => go('settings')}><Gear /></button>
+        </div>
+      ) : (
+        <div className="page-head">
+          <div className="t18 w8">Pocket Sense</div>
+          <div className="t13 muted">{shortDate(now)}</div>
+        </div>
+      )}
       <div className="rule" />
       <div style={{ padding: '20px 20px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div className="t13 muted">{week.left >= 0 ? 'Left this week' : 'Over this week'}</div>
@@ -86,6 +113,19 @@ export function Home() {
             <div className="t15 w6">Was the {lookbacks[0].name.toLowerCase()} worth it?</div>
           </div>
           <button className="btn btn-primary" style={{ minHeight: 44, padding: '0 16px' }} onClick={() => go('lookback')}>Answer</button>
+        </div>
+      )}
+      {acc.enabled && acc.status === 'out' && !acc.local.promptDismissed && (
+        <div className="sign-prompt">
+          <div style={{ padding: '14px 0 14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="t15 w6">Sign in to use Pocket Sense on your PC</div>
+            <div className="t13 muted pretty" style={{ lineHeight: 1.45 }}>Your purchases, goal and parking lot stay the same on both. Optional.</div>
+            <button className="btn btn-primary self-start" style={{ minHeight: 44, padding: '0 16px', fontSize: 14 }} onClick={() => go('signin')}>Sign in</button>
+          </div>
+          <button className="icon-btn" aria-label="Dismiss"
+            onClick={() => { acc.dismissPrompt(); toast('Hidden. You can sign in any time from Settings.'); }}>
+            <XSmall />
+          </button>
         </div>
       )}
       <div className="rule" />
