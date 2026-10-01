@@ -45,9 +45,12 @@ button{font-family:inherit;}
 
 <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
 <div style="display:flex; flex-direction:column;">
-  <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:16px 20px 12px;">
-    <div style="font-size:18px; font-weight:800;">Pocket Sense</div>
-    <div style="font-size:13px; color:var(--color-neutral-700);">Sat 26 Sep</div>
+  <div style="display:flex; align-items:center; gap:8px; padding:6px 8px 6px 20px; min-height:60px; box-sizing:border-box;">
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+      <div style="font-size:18px; font-weight:800;">Pocket Sense</div>
+      <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--color-neutral-700);"><span>Sat 26 Sep</span><sc-if value="{{ showSync }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true">·</span><span style="width:8px; height:8px; flex:none; background:{{ syncDot }};"></span><span role="status" style="color:{{ syncFg }};">{{ syncLabel }}</span></sc-if></div>
+    </div>
+    <button aria-label="Settings" onClick="{{ goSettings }}" style="width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);" style-hover="background:var(--color-surface);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
   </div>
   <div style="height:2px; background:var(--color-divider);"></div>
   <div style="padding:20px 20px 24px; display:flex; flex-direction:column; gap:8px;">
@@ -83,6 +86,16 @@ button{font-family:inherit;}
       <div style="font-size:15px; font-weight:600;">Was the denim jacket worth it?</div>
     </div>
     <button class="btn btn-primary" onClick="{{ goLookback }}" style="min-height:44px; padding:0 16px; font-size:14px;">Answer</button>
+  </div>
+  </sc-if>
+  <sc-if value="{{ showSignPrompt }}" hint-placeholder-val="{{ false }}">
+  <div style="margin:0 20px 16px; border:2px solid var(--color-text); display:grid; grid-template-columns:minmax(0,1fr) 44px; align-items:start;">
+    <div style="padding:14px 0 14px 16px; display:flex; flex-direction:column; gap:8px;">
+      <div style="font-size:15px; font-weight:600;">Sign in to use Pocket Sense on your PC</div>
+      <div style="font-size:13px; line-height:1.45; color:var(--color-neutral-700); text-wrap:pretty;">Your purchases, goal and parking lot stay the same on both. Optional.</div>
+      <button class="btn btn-primary" onClick="{{ goSigninHome }}" style="min-height:44px; align-self:flex-start; padding:0 16px; font-size:14px;">Sign in</button>
+    </div>
+    <button aria-label="Dismiss" onClick="{{ dismissPrompt }}" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
   </div>
   </sc-if>
   <div style="height:2px; background:var(--color-divider);"></div>
@@ -424,6 +437,208 @@ button{font-family:inherit;}
 </div>
 </sc-if>
 
+<sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column;">
+  <div style="display:flex; align-items:center; gap:4px; padding:4px 8px; min-height:56px; border-bottom:2px solid var(--color-divider);">
+    <button aria-label="Back" onClick="{{ goHome }}" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button>
+    <div style="font-size:18px; font-weight:800;">Settings</div>
+  </div>
+  <div style="padding:20px 20px 12px; font-size:16px; font-weight:800;">Account</div>
+  <sc-if value="{{ acctOut }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:0 20px 20px; display:flex; flex-direction:column; gap:12px;">
+      <div style="font-size:15px; line-height:1.5; text-wrap:pretty;">{{ acctOutLine }}</div>
+      <button class="btn btn-primary" onClick="{{ goSigninSettings }}" style="min-height:48px; align-self:flex-start; justify-content:flex-start; padding:0 20px; font-size:15px;">Sign in or create account</button>
+    </div>
+  </sc-if>
+  <sc-if value="{{ acctPending }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:0 20px 16px; display:flex; flex-direction:column; gap:6px;">
+      <div style="font-size:15px; font-weight:600;">{{ acctEmail }}</div>
+      <div style="font-size:14px; line-height:1.5; text-wrap:pretty;">Waiting for a parent to approve. Your data stays on this phone until then.</div>
+      <div style="font-size:13px; color:var(--color-neutral-700);">Request sent to {{ acctParentEmail }}</div>
+      <button class="btn btn-ghost" onClick="{{ resendConsent }}" style="min-height:44px; align-self:flex-start; padding:0 4px; font-size:14px; color:var(--color-accent-700);">Resend request</button>
+    </div>
+  </sc-if>
+  <sc-if value="{{ acctIn }}" hint-placeholder-val="{{ false }}">
+    <div style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px; padding:14px 20px; border-top:1px solid var(--color-neutral-300); font-size:15px;"><span style="color:var(--color-neutral-700);">Signed in as</span><span style="font-weight:600; text-align:right; overflow-wrap:anywhere;">{{ acctEmail }}</span></div>
+    <div style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px; padding:14px 20px; border-top:1px solid var(--color-neutral-300); font-size:15px;"><span style="color:var(--color-neutral-700);">Sync</span><span style="display:flex; align-items:center; justify-content:flex-end; gap:8px; font-weight:600; color:{{ syncFg }};"><span style="width:8px; height:8px; flex:none; background:{{ syncDot }};"></span>{{ syncLabel }}</span></div>
+    <div style="padding:8px 20px 20px; border-top:1px solid var(--color-neutral-300);">
+      <button class="btn btn-secondary" onClick="{{ openSignOut }}" style="min-height:48px; justify-content:flex-start; padding:0 20px; font-size:15px; margin-top:8px;">Sign out</button>
+    </div>
+  </sc-if>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="padding:20px 20px 8px; font-size:16px; font-weight:800;">Privacy</div>
+  <div style="padding:0 20px 12px; font-size:14px; line-height:1.5; color:var(--color-neutral-700); text-wrap:pretty;">With an account, purchases and mood tags are stored on our server so they sync. The person who runs Pocket Sense can technically see them.</div>
+  <button onClick="{{ goPrivacySettings }}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:56px; padding:0 20px; border:0; border-top:1px solid var(--color-neutral-300); background:transparent; cursor:pointer; font-size:15px; color:var(--color-text); text-align:left;" style-hover="background:var(--color-surface);">Privacy policy<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+  <sc-if value="{{ acctHas }}" hint-placeholder-val="{{ false }}">
+    <button onClick="{{ goDelete }}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:56px; padding:0 20px; border:0; border-top:1px solid var(--color-neutral-300); background:transparent; cursor:pointer; font-size:15px; font-weight:600; color:var(--color-accent-700); text-align:left;" style-hover="background:var(--color-accent-100);">Delete account<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+  </sc-if>
+  <div style="height:24px; border-top:1px solid var(--color-neutral-300);"></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSignin }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column;">
+  <div style="display:flex; align-items:center; gap:4px; padding:4px 8px; min-height:56px; border-bottom:2px solid var(--color-divider);">
+    <button aria-label="Back" onClick="{{ goAuthBack }}" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button>
+    <div style="font-size:18px; font-weight:800;">Account</div>
+  </div>
+  <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+    <div role="radiogroup" aria-label="Sign in or create account" style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); border:1px solid var(--color-divider);">
+      <button role="radio" aria-checked="{{ isSigninMode }}" onClick="{{ setSigninMode }}" style="min-height:48px; border:0; border-right:1px solid var(--color-divider); cursor:pointer; font-size:15px; background:{{ siBg }}; color:{{ siFg }};">Sign in</button>
+      <button role="radio" aria-checked="{{ isSignupMode }}" onClick="{{ setSignupMode }}" style="min-height:48px; border:0; cursor:pointer; font-size:15px; background:{{ suBg }}; color:{{ suFg }};">Create account</button>
+    </div>
+    <button class="btn btn-secondary" onClick="{{ authGoogle }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px; border-width:2px;">Continue with Google</button>
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:12px; font-size:13px; color:var(--color-neutral-700);"><div style="height:1px; background:var(--color-divider);"></div><span>or with email</span><div style="height:1px; background:var(--color-divider);"></div></div>
+    <div class="field"><label for="au-email">Email</label><input id="au-email" class="input" type="email" autoComplete="email" value="{{ auth.email }}" onChange="{{ onAuthEmail }}" style="min-height:48px; font-size:16px;"></div>
+    <div class="field"><label for="au-pass">Password</label><input id="au-pass" class="input" type="password" autoComplete="current-password" value="{{ auth.password }}" onChange="{{ onAuthPassword }}" style="min-height:48px; font-size:16px;"></div>
+    <sc-if value="{{ isSignupMode }}" hint-placeholder-val="{{ false }}">
+      <div class="field"><label for="au-year">Birth year</label><input id="au-year" class="input" inputMode="numeric" maxLength="4" value="{{ auth.birthYear }}" onChange="{{ onAuthYear }}" placeholder="2007" style="min-height:48px; font-size:16px;"></div>
+      <div style="font-size:13px; line-height:1.45; color:var(--color-neutral-700); margin-top:-8px;">Under 18? We'll ask a parent to approve before anything syncs.</div>
+      <div style="background:var(--color-surface); padding:14px 16px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:15px; font-weight:600;">What gets stored</div>
+        <div style="font-size:14px; line-height:1.5; text-wrap:pretty;">Your purchases and mood tags are stored on our server so they sync between your phone and PC.</div>
+        <div style="font-size:14px; line-height:1.5; text-wrap:pretty;">The person who runs Pocket Sense can technically see this data in the database.</div>
+        <button class="btn btn-ghost" onClick="{{ goPrivacySignin }}" style="min-height:44px; align-self:flex-start; padding:0 4px; font-size:14px; color:var(--color-accent-700);">Read the privacy policy</button>
+      </div>
+      <button onClick="{{ toggleAgree }}" aria-pressed="{{ auth.agreed }}" style="display:flex; align-items:center; gap:12px; min-height:48px; padding:0; border:0; background:transparent; cursor:pointer; font-size:15px; color:var(--color-text); text-align:left;"><span style="width:22px; height:22px; flex:none; border:2px solid var(--color-text); background:{{ agreeBox }};"></span>I understand how my data is stored</button>
+    </sc-if>
+    <sc-if value="{{ authError }}" hint-placeholder-val="{{ false }}">
+      <div role="alert" style="font-size:14px; font-weight:600; color:var(--color-accent-700);">{{ authError }}</div>
+    </sc-if>
+    <button class="btn btn-primary" onClick="{{ authEmail }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">{{ authSubmitLabel }}</button>
+    <sc-if value="{{ isSigninMode }}" hint-placeholder-val="{{ true }}">
+      <button class="btn btn-ghost" onClick="{{ goForgot }}" style="min-height:44px; align-self:flex-start; padding:0 4px; font-size:14px; color:var(--color-accent-700);">Forgot password?</button>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isForgot }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column; min-height:100%;">
+  <div style="display:flex; align-items:center; gap:4px; padding:4px 8px; min-height:56px; border-bottom:2px solid var(--color-divider);">
+    <button aria-label="Back" onClick="{{ goSigninBack }}" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button>
+    <div style="font-size:18px; font-weight:800;">Reset password</div>
+  </div>
+  <sc-if value="{{ forgotForm }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+      <div style="font-size:15px; line-height:1.5;">We'll email you a link to set a new password.</div>
+      <div class="field"><label for="fp-email">Email</label><input id="fp-email" class="input" type="email" autoComplete="email" value="{{ auth.email }}" onChange="{{ onAuthEmail }}" style="min-height:48px; font-size:16px;"></div>
+      <sc-if value="{{ authError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:14px; font-weight:600; color:var(--color-accent-700);">{{ authError }}</div></sc-if>
+      <button class="btn btn-primary" onClick="{{ sendReset }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Send reset link</button>
+    </div>
+  </sc-if>
+  <sc-if value="{{ forgotSent }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:20px; display:flex; flex-direction:column; gap:12px; padding-top:40px;">
+      <div style="font-size:32px; font-weight:800; line-height:1.05;">Check your email</div>
+      <div style="font-size:15px; line-height:1.5; text-wrap:pretty;">We sent a reset link to {{ auth.email }}. It works for 1 hour.</div>
+      <div style="font-size:14px; color:var(--color-neutral-700);">Not there? Check your spam folder.</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
+        <button class="btn btn-primary" onClick="{{ goSigninBack }}" style="min-height:48px; padding:0 20px; font-size:15px;">Back to sign in</button>
+        <button class="btn btn-secondary" onClick="{{ resendReset }}" style="min-height:48px; padding:0 20px; font-size:15px;">Send it again</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isConsent }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column; min-height:100%; box-sizing:border-box; padding:16px 20px 24px; gap:14px;">
+  <div style="display:flex; align-items:center; min-height:44px; font-size:13px; font-weight:600; color:var(--color-accent-700);">Parent approval</div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <sc-if value="{{ consentForm }}" hint-placeholder-val="{{ true }}">
+    <div style="font-size:32px; font-weight:800; line-height:1.05; padding-top:16px; text-wrap:pretty;">Ask a parent to approve</div>
+    <div style="font-size:15px; line-height:1.5; text-wrap:pretty;">You're under 18, so a parent or guardian needs to agree before your data is stored on our server.</div>
+    <div style="font-size:15px; line-height:1.5; text-wrap:pretty;">Until then, Pocket Sense works as normal on this phone.</div>
+    <div class="field"><label for="pc-email">Parent or guardian's email</label><input id="pc-email" class="input" type="email" value="{{ auth.parentEmail }}" onChange="{{ onParentEmail }}" style="min-height:48px; font-size:16px;"></div>
+    <sc-if value="{{ authError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:14px; font-weight:600; color:var(--color-accent-700);">{{ authError }}</div></sc-if>
+    <div style="flex:1;"></div>
+    <button class="btn btn-primary" onClick="{{ sendConsent }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Send request</button>
+    <button class="btn btn-ghost" onClick="{{ skipConsent }}" style="min-height:44px; align-self:flex-start; padding:0 4px; font-size:14px; color:var(--color-accent-700);">Not now, keep it on this phone</button>
+  </sc-if>
+  <sc-if value="{{ consentSent }}" hint-placeholder-val="{{ false }}">
+    <div style="font-size:32px; font-weight:800; line-height:1.05; padding-top:16px;">Request sent</div>
+    <div style="font-size:15px; line-height:1.5; text-wrap:pretty;">We emailed {{ auth.parentEmail }} what we store and a button to approve. Sync starts as soon as they do.</div>
+    <div style="flex:1;"></div>
+    <button class="btn btn-primary" onClick="{{ goHome }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Back to home</button>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isUpload }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column; min-height:100%; box-sizing:border-box; padding:16px 20px 24px; gap:14px;">
+  <div style="display:flex; align-items:center; min-height:44px; font-size:18px; font-weight:800;">Pocket Sense</div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="font-size:32px; font-weight:800; line-height:1.05; padding-top:24px; text-wrap:pretty;">{{ uploadTitle }}</div>
+  <div style="font-size:15px; line-height:1.5; text-wrap:pretty;">{{ uploadBody }}</div>
+  <div role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ auth.progress }}" style="height:8px; background:var(--color-neutral-300); position:relative; margin-top:8px;"><div style="position:absolute; left:0; top:0; bottom:0; width:{{ uploadPct }}; background:var(--color-text);"></div></div>
+  <div style="display:flex; flex-direction:column;">
+    <sc-for list="{{ uploadItems }}" as="u" hint-placeholder-count="5">
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:12px; align-items:center; padding:12px 0; border-top:1px solid var(--color-neutral-300); font-size:15px;"><span>{{ u.label }}</span><span style="font-weight:600;">{{ u.val }}</span><span style="width:40px; text-align:right; font-size:12px; font-weight:600; color:{{ u.fg }};">{{ u.status }}</span></div>
+    </sc-for>
+  </div>
+  <div style="flex:1;"></div>
+  <sc-if value="{{ uploadDone }}" hint-placeholder-val="{{ false }}">
+    <button class="btn btn-primary" onClick="{{ goHome }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Back to home</button>
+  </sc-if>
+  <sc-if value="{{ uploadBusy }}" hint-placeholder-val="{{ true }}">
+    <div style="font-size:13px; color:var(--color-neutral-700);">Keep the app open until this finishes.</div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRestore }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column; min-height:100%; box-sizing:border-box; padding:16px 20px 24px; gap:14px;">
+  <div style="display:flex; align-items:center; min-height:44px; font-size:13px; font-weight:600; color:var(--color-accent-700);">Deletion scheduled · {{ acctDeletionAt }}</div>
+  <div style="height:2px; background:var(--color-divider);"></div>
+  <div style="font-size:32px; font-weight:800; line-height:1.05; padding-top:16px; text-wrap:pretty;">Keep your account?</div>
+  <div style="font-size:15px; line-height:1.5; text-wrap:pretty;">You asked to delete it. It will be erased on {{ acctDeletionAt }} unless you restore it now.</div>
+  <div style="font-size:15px; line-height:1.5; text-wrap:pretty;">Restoring brings back everything that was synced: purchases, mood tags, goal and look-backs.</div>
+  <div style="flex:1;"></div>
+  <button class="btn btn-primary" onClick="{{ restoreAcct }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Restore my account</button>
+  <button class="btn btn-secondary" onClick="{{ keepDeletion }}" style="min-height:48px; justify-content:flex-start; padding:0 20px; font-size:15px;">Keep the deletion</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDelete }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column;">
+  <div style="display:flex; align-items:center; gap:4px; padding:4px 8px; min-height:56px; border-bottom:2px solid var(--color-divider);">
+    <button aria-label="Back" onClick="{{ goSettings }}" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button>
+    <div style="font-size:18px; font-weight:800;">Delete account</div>
+  </div>
+  <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+    <div style="font-size:28px; font-weight:800; line-height:1.05;">Delete your account?</div>
+    <div style="font-size:15px; line-height:1.5; text-wrap:pretty;">This deletes your account and everything synced to it: purchases, mood tags, goal, parking lot and look-backs. This phone is cleared too.</div>
+    <div style="background:var(--color-surface); padding:14px 16px; display:flex; flex-direction:column; gap:6px;">
+      <div style="font-size:15px; font-weight:600;">You have 7 days to change your mind</div>
+      <div style="font-size:14px; line-height:1.5; text-wrap:pretty;">Sign in before {{ deletePreviewDate }}, or use the link we email you, and nothing is lost. After that it's gone for good.</div>
+    </div>
+    <div class="field"><label for="del-confirm">Type DELETE to confirm</label><input id="del-confirm" class="input" autoCapitalize="characters" autoComplete="off" value="{{ auth.deleteText }}" onChange="{{ onDeleteText }}" style="min-height:48px; font-size:16px; letter-spacing:0.04em;"></div>
+    <button class="btn btn-primary" disabled="{{ deleteDisabled }}" onClick="{{ confirmDelete }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Delete my account</button>
+    <button class="btn btn-secondary" onClick="{{ goSettings }}" style="min-height:48px; justify-content:flex-start; padding:0 20px; font-size:15px;">Cancel</button>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPrivacy }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex; flex-direction:column;">
+  <div style="display:flex; align-items:center; gap:4px; padding:4px 8px; min-height:56px; border-bottom:2px solid var(--color-divider);">
+    <button aria-label="Back" onClick="{{ goPrivacyBack }}" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; color:var(--color-text);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button>
+    <div style="font-size:18px; font-weight:800;">Privacy policy</div>
+  </div>
+  <div style="padding:20px; display:flex; flex-direction:column; gap:20px; font-size:15px; line-height:1.55;">
+    <div style="font-size:13px; color:var(--color-neutral-700);">Last updated [date]</div>
+    <div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size:17px; font-weight:800;">1. Who we are</div><div style="text-wrap:pretty;">Pocket Sense is a spending-awareness app. In this policy, "we" means the person who runs it. Contact: [contact email].</div></div>
+    <div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size:17px; font-weight:800;">2. What we collect</div><div style="text-wrap:pretty;">Without an account, everything stays on your phone and we collect nothing. With an account, we store your email address and birth year; your purchases (amount, category, wallet and time); any mood tags you add; your goal, parking lot items and cooldown timers; and your settings, including labels the app has learned from your look-backs.</div></div>
+    <div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size:17px; font-weight:800;">3. Why we collect it</div><div style="text-wrap:pretty;">Only to keep your data the same across your devices and to run the app's features. We don't use it for advertising and we don't sell it.</div></div>
+    <div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size:17px; font-weight:800;">4. Where it's stored</div><div style="text-wrap:pretty;">On servers run by Supabase, our database provider. Password-reset emails are sent through Resend, which receives only your email address.</div></div>
+    <div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size:17px; font-weight:800;">5. Who can see it</div><div style="text-wrap:pretty;">Your account is protected by your password or Google sign-in. The person who runs Pocket Sense can technically view your data in the database, and will only do so to fix a problem you report.</div></div>
+    <div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size:17px; font-weight:800;">6. Users under 18</div><div style="text-wrap:pretty;">If you're under 18, a parent or guardian must approve before your data is stored on our server, in line with Indonesia's Personal Data Protection Law (UU PDP No. 27/2022). Until then, the app works on your phone only.</div></div>
+    <div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size:17px; font-weight:800;">7. Signing out and deleting</div><div style="text-wrap:pretty;">Signing out clears your data from that phone; it stays in your account. You can delete your account in Settings. Deletion takes effect after 7 days, and signing in before then cancels it. After 7 days, your account and all synced data are permanently erased.</div></div>
+    <div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size:17px; font-weight:800;">8. Changes</div><div style="text-wrap:pretty;">If this policy changes, we'll tell you in the app before the change applies.</div></div>
+  </div>
+</div>
+</sc-if>
+
 </div>
 
 <sc-if value="{{ showNav }}" hint-placeholder-val="{{ true }}">
@@ -554,6 +769,21 @@ button{font-family:inherit;}
 </div>
 </sc-if>
 
+<sc-if value="{{ signOutOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute; inset:0; z-index:30; display:flex; flex-direction:column; justify-content:flex-end;">
+  <div onClick="{{ closeSignOut }}" style="position:absolute; inset:0; background:color-mix(in srgb, var(--color-text) 45%, transparent);"></div>
+  <div role="dialog" aria-label="Sign out" style="position:relative; background:var(--color-bg); border-top:2px solid var(--color-text); padding:20px; display:flex; flex-direction:column; gap:14px;">
+    <div style="font-size:28px; font-weight:800; line-height:1.05;">Sign out?</div>
+    <div style="font-size:15px; line-height:1.5; text-wrap:pretty;">This clears your data from this phone. It stays in your account and comes back when you sign in again.</div>
+    <sc-if value="{{ unsyncedLine }}" hint-placeholder-val="{{ false }}">
+      <div role="alert" style="background:var(--color-accent-100); color:var(--color-accent-800); padding:12px 14px; font-size:14px; font-weight:600; line-height:1.45;">{{ unsyncedLine }}</div>
+    </sc-if>
+    <button class="btn btn-primary" onClick="{{ confirmSignOut }}" style="min-height:52px; justify-content:flex-start; padding:0 20px; font-size:16px;">Sign out and clear this phone</button>
+    <button class="btn btn-secondary" onClick="{{ closeSignOut }}" style="min-height:48px; justify-content:flex-start; padding:0 20px; font-size:15px;">Cancel</button>
+  </div>
+</div>
+</sc-if>
+
 </div>
 </x-import>
 </div>
@@ -581,6 +811,23 @@ button{font-family:inherit;}
     </div>
     <div style="font-size:12px; line-height:1.5; color:var(--color-neutral-700);">Applies to Home, Spending, Insights, Goal and Parking lot.</div>
   </div>
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    <div style="font-size:13px; font-weight:600;">Account</div>
+    <div role="radiogroup" aria-label="Account state" style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); border:1px solid var(--color-divider);">
+      <sc-for list="{{ acctOpts }}" as="o" hint-placeholder-count="3">
+        <button role="radio" aria-checked="{{ o.on }}" onClick="{{ o.onClick }}" style="min-height:44px; padding:0 6px; border:0; border-right:1px solid var(--color-divider); cursor:pointer; font-size:13px; background:{{ o.bg }}; color:{{ o.fg }};">{{ o.label }}</button>
+      </sc-for>
+    </div>
+    <div role="radiogroup" aria-label="Connection" style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); border:1px solid var(--color-divider);">
+      <sc-for list="{{ netOpts }}" as="o" hint-placeholder-count="2">
+        <button role="radio" aria-checked="{{ o.on }}" onClick="{{ o.onClick }}" style="min-height:44px; padding:0 6px; border:0; border-right:1px solid var(--color-divider); cursor:pointer; font-size:13px; background:{{ o.bg }}; color:{{ o.fg }};">{{ o.label }}</button>
+      </sc-for>
+    </div>
+    <sc-if value="{{ acctPending }}" hint-placeholder-val="{{ false }}">
+      <button class="btn btn-secondary" onClick="{{ parentApproves }}" style="min-height:44px; align-self:flex-start; justify-content:flex-start; padding:0 16px; font-size:14px;">Simulate: parent approves</button>
+    </sc-if>
+    <div style="font-size:12px; line-height:1.5; color:var(--color-neutral-700);">Go offline while signed in, then log something to see changes wait.</div>
+  </div>
   <div style="height:2px; background:var(--color-divider);"></div>
   <div style="font-size:14px; line-height:1.55; text-wrap:pretty;">Try the two-tap log: press +, type an amount, tap a category. Or tap a Repeat chip for a single tap.</div>
   <button class="btn btn-secondary" onClick="{{ resetAll }}" style="min-height:44px; align-self:flex-start; justify-content:flex-start; padding:0 16px; font-size:14px;">Reset prototype</button>
@@ -588,7 +835,7 @@ button{font-family:inherit;}
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;patternNames&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior Lens&quot;},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;home&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;onboarding&quot;,&quot;transactions&quot;,&quot;insights&quot;,&quot;goals&quot;,&quot;thinking&quot;,&quot;parking&quot;,&quot;lookback&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;patternNames&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior Lens&quot;},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;home&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;onboarding&quot;,&quot;transactions&quot;,&quot;insights&quot;,&quot;goals&quot;,&quot;thinking&quot;,&quot;parking&quot;,&quot;lookback&quot;,&quot;settings&quot;,&quot;signin&quot;,&quot;privacy&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;}}">
 const TODAY = '2026-09-26';
 const DAY_LABEL = { '2026-09-26': 'Today · Sat 26 Sep', '2026-09-25': 'Yesterday · Fri 25 Sep', '2026-09-24': 'Thu 24 Sep', '2026-09-23': 'Wed 23 Sep' };
 const CATS = [
@@ -615,7 +862,9 @@ const INCOME_SRC = ['Allowance', 'Part-time', 'Gift', 'Freelance', 'Other'];
 const SCREENS = [
   ['home', 'Home'], ['transactions', 'Spending'], ['insights', 'Insights'], ['goals', 'Goal'],
   ['thinking', 'Thinking of buying'], ['parking', 'Parking lot'], ['lookback', 'Look-back'], ['onboarding', 'Onboarding'],
+  ['settings', 'Settings'], ['signin', 'Sign in'], ['privacy', 'Privacy policy'], ['delete', 'Delete account'],
 ];
+const DELETE_ON = 'Sat 3 Oct';
 const DATA_SCREENS = ['home', 'transactions', 'insights', 'goals', 'parking'];
 const ord = n => n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th');
 const money = n => (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2);
@@ -659,6 +908,10 @@ function init(screen) {
     think: { name: '', price: '', wait: '24h', sale: false },
     ob: { step: 0, income: ['Allowance', 'Part-time'], wallets: ['Cash', 'E-wallet'], goalName: 'Headphones', goalPrice: '180', threshold: 15 },
     committed: false, whyHappens: false, toast: null, now,
+    account: { status: 'out', email: null, parentEmail: '', deletionAt: null, wiped: false, promptDismissed: false },
+    sync: { online: true, pending: 0, syncing: false },
+    auth: { mode: 'signin', email: 'rina@example.com', password: 'pocket123', birthYear: '', agreed: false, error: '', forgotSent: false, parentEmail: '', consentSent: false, deleteText: '', progress: 0, dir: 'up' },
+    authFrom: 'home', privacyFrom: 'settings', signOutOpen: false,
   };
 }
 
@@ -673,7 +926,8 @@ class Component extends DCLogic {
     this.tick = setInterval(() => this.setState({ now: Date.now() }), 30000);
     this.onKey = e => {
       if (e.key !== 'Escape') return;
-      if (this.state.whyId) this.setState({ whyId: null });
+      if (this.state.signOutOpen) this.setState({ signOutOpen: false });
+      else if (this.state.whyId) this.setState({ whyId: null });
       else if (this.state.log.open) this.closeLog();
     };
     window.addEventListener('keydown', this.onKey);
@@ -681,7 +935,56 @@ class Component extends DCLogic {
   componentWillUnmount() {
     window.removeEventListener('resize', this.fit);
     window.removeEventListener('keydown', this.onKey);
-    clearInterval(this.tick); clearTimeout(this.toastT);
+    clearInterval(this.tick); clearTimeout(this.toastT); clearInterval(this.upT); clearTimeout(this.syncT);
+  }
+  setAuth(patch) { this.setState(s => ({ auth: Object.assign({}, s.auth, patch) })); }
+  setAcct(patch) { this.setState(s => ({ account: Object.assign({}, s.account, patch) })); }
+  startUpload(dir) {
+    clearInterval(this.upT);
+    this.setAuth({ progress: 0, dir, error: '' });
+    this.go('upload');
+    this.upT = setInterval(() => {
+      const p = Math.min(100, this.state.auth.progress + 4);
+      this.setAuth({ progress: p });
+      if (p < 100) return;
+      clearInterval(this.upT);
+      this.setState(s => ({
+        account: Object.assign({}, s.account, { status: 'in', email: s.account.email || s.auth.email, wiped: false, deletionAt: null }),
+        sync: { online: s.sync.online, pending: 0, syncing: false },
+        dataState: s.account.wiped ? 'normal' : s.dataState,
+      }));
+    }, 110);
+  }
+  setOnline(online) {
+    clearTimeout(this.syncT);
+    const S = this.state;
+    if (online && !S.sync.online && S.account.status === 'in') {
+      this.setState({ sync: { online: true, pending: S.sync.pending, syncing: true } });
+      this.syncT = setTimeout(() => this.setState({ sync: { online: true, pending: 0, syncing: false } }), 1600);
+    } else this.setState({ sync: { online, pending: online ? 0 : S.sync.pending, syncing: false } });
+  }
+  submitAuth(method) {
+    const A = this.state.auth, err = e => this.setAuth({ error: e });
+    if (method === 'email') {
+      if (!/.+@.+\..+/.test(A.email)) return err('Enter a valid email address.');
+      if (A.password.length < 8) return err('Password needs at least 8 characters.');
+    }
+    if (A.mode === 'signup') {
+      const y = parseInt(A.birthYear, 10);
+      if (!(y > 1900 && y <= 2026)) return err('Enter the year you were born.');
+      if (!A.agreed) return err('Tick the box to confirm you understand how your data is stored.');
+      this.setAcct({ email: A.email });
+      if (2026 - y < 18) { this.setAuth({ error: '', consentSent: false }); return this.go('consent'); }
+      return this.startUpload('up');
+    }
+    this.setAcct({ email: A.email });
+    if (this.state.account.deletionAt) { this.setAuth({ error: '' }); return this.go('restore'); }
+    this.startUpload(this.state.account.wiped ? 'down' : 'up');
+  }
+  clearPhone(patch, msg) {
+    this.setState(s => ({ account: Object.assign({}, s.account, { status: 'out', wiped: true }, patch), sync: { online: s.sync.online, pending: 0, syncing: false }, dataState: 'empty', signOutOpen: false }));
+    this.setAuth({ deleteText: '', password: '' });
+    this.go('home'); this.toast(msg);
   }
   go(screen) {
     this.setState({ screen, addOpen: false });
@@ -728,7 +1031,7 @@ class Component extends DCLogic {
   addPurchase(name, cat, amt, mood) {
     const d = new Date(), id = 'n' + Date.now();
     const p = { id, name, cat, amt, wallet: this.state.lastWallet, mood: mood || null, day: TODAY, hour: d.getHours(), min: d.getMinutes() };
-    this.setState(s => ({ purchases: [p].concat(s.purchases) }));
+    this.setState(s => ({ purchases: [p].concat(s.purchases), sync: s.account.status === 'in' && !s.sync.online ? Object.assign({}, s.sync, { pending: s.sync.pending + 1 }) : s.sync }));
     return id;
   }
   closeLog() { this.setState({ log: { open: false, mode: 'purchase', amt: '', savedId: null, savedIncome: null, hint: '' } }); }
@@ -775,7 +1078,9 @@ class Component extends DCLogic {
     const showState = DATA_SCREENS.includes(scr) && S.dataState !== 'normal';
     const titles = { home: 'Pocket Sense', transactions: 'Spending', insights: 'Insights', goals: 'Goal', parking: 'Parking lot' };
     const emptyCopy = {
-      home: ['Nothing logged this week', 'Press + and type an amount, then tap a category. That is the whole log.', 'Log a purchase', () => { this.setState({ dataState: 'normal', purchases: [] }); this.setLog({ open: true }); }],
+      home: S.account.wiped && S.account.status === 'out'
+        ? ['This phone is cleared', 'Sign in to bring your data back, or start fresh by logging a purchase.', 'Sign in', () => { this.setState({ authFrom: 'home' }); this.setAuth({ mode: 'signin', error: '' }); this.go('signin'); }]
+        : ['Nothing logged this week', 'Press + and type an amount, then tap a category. That is the whole log.', 'Log a purchase', () => { this.setState({ dataState: 'normal', purchases: [] }); this.setLog({ open: true }); }],
       transactions: ['No purchases yet', 'Every purchase you log shows up here with its class: Need, Useful, Want or Invest.', 'Log a purchase', () => { this.setState({ dataState: 'normal', purchases: [] }); this.setLog({ open: true }); }],
       insights: ['Learning your patterns', 'For your first 2 weeks you will see simple totals only. Patterns appear once there is enough data to be fair about them.', null, null],
       goals: ['No goal yet', 'Pick one thing you are saving for. A photo and a price make it real.', 'Set a goal', () => this.setState({ dataState: 'normal', screen: 'onboarding', ob: Object.assign({}, S.ob, { step: 2 }) })],
@@ -879,7 +1184,78 @@ class Component extends DCLogic {
     const setOb = patch => this.setState(s => ({ ob: Object.assign({}, s.ob, patch) }));
     const toggleIn = (key, v) => setOb({ [key]: O[key].includes(v) ? O[key].filter(x => x !== v) : O[key].concat([v]) });
 
+    // account + sync
+    const AC = S.account, SY = S.sync, AU = S.auth;
+    let syncLabel = '', syncDot = 'var(--color-text)', syncFg = 'var(--color-text)';
+    if (AC.status === 'pendingConsent') { syncLabel = 'Sync waits for parent'; syncDot = 'var(--color-neutral-500)'; }
+    else if (AC.status === 'in') {
+      if (!SY.online) { syncLabel = SY.pending ? `Offline · ${SY.pending} change${SY.pending > 1 ? 's' : ''} waiting` : 'Offline'; syncDot = 'var(--color-accent)'; syncFg = 'var(--color-accent-700)'; }
+      else if (SY.syncing) { syncLabel = 'Syncing…'; syncDot = 'var(--color-neutral-500)'; }
+      else syncLabel = 'Synced';
+    }
+    const goSignin = from => { this.setState({ authFrom: from }); this.setAuth({ error: '' }); this.go('signin'); };
+    const goPrivacy = from => { this.setState({ privacyFrom: from }); this.go('privacy'); };
+    const upDone = AU.progress >= 100, down = AU.dir === 'down';
+    const upItems = [['Purchases', P.length], ['Mood tags', P.filter(p => p.mood).length], ['Parked items', S.parking.length], ['Goal', S.goal.name], ['Settings and learned labels', 'All']];
+    const setAcctState = k => {
+      clearInterval(this.upT);
+      if (k === 'out') this.setState(s => ({ account: Object.assign({}, s.account, { status: 'out', deletionAt: null }) }));
+      else this.setState(s => ({ account: Object.assign({}, s.account, { status: k, email: s.account.email || s.auth.email, parentEmail: s.account.parentEmail || 'parent@example.com', wiped: false, deletionAt: null }), dataState: s.account.wiped ? 'normal' : s.dataState }));
+    };
+
     return {
+      showSync: AC.status !== 'out', syncLabel, syncDot, syncFg,
+      showSignPrompt: AC.status === 'out' && !AC.promptDismissed,
+      dismissPrompt: () => { this.setAcct({ promptDismissed: true }); this.toast('Hidden. You can sign in any time from Settings.'); },
+      goSettings: () => this.go('settings'), goSigninHome: () => goSignin('home'), goSigninSettings: () => goSignin('settings'),
+      goAuthBack: () => this.go(S.authFrom || 'home'), goSigninBack: () => { this.setAuth({ forgotSent: false, error: '' }); this.go('signin'); },
+      goPrivacySettings: () => goPrivacy('settings'), goPrivacySignin: () => goPrivacy('signin'), goPrivacyBack: () => this.go(S.privacyFrom || 'settings'),
+      goDelete: () => { this.setAuth({ deleteText: '' }); this.go('delete'); },
+      isSettings: scr === 'settings', isSignin: scr === 'signin', isForgot: scr === 'forgot', isConsent: scr === 'consent',
+      isUpload: scr === 'upload', isRestore: scr === 'restore', isDelete: scr === 'delete', isPrivacy: scr === 'privacy',
+      acctOut: AC.status === 'out', acctIn: AC.status === 'in', acctPending: AC.status === 'pendingConsent', acctHas: AC.status !== 'out',
+      acctEmail: AC.email || AU.email, acctParentEmail: AC.parentEmail, acctDeletionAt: AC.deletionAt || DELETE_ON,
+      acctOutLine: AC.deletionAt ? `Your account will be deleted on ${AC.deletionAt}. Sign in before then to keep it.` : 'Not signed in. Everything is saved on this phone only.',
+      resendConsent: () => this.toast(`Sent again to ${AC.parentEmail}.`),
+      openSignOut: () => this.setState({ signOutOpen: true }), closeSignOut: () => this.setState({ signOutOpen: false }),
+      unsyncedLine: !SY.online && SY.pending ? `${SY.pending} change${SY.pending > 1 ? 's' : ''} haven't synced because you're offline. Signing out now loses ${SY.pending > 1 ? 'them' : 'it'}.` : '',
+      confirmSignOut: () => this.clearPhone({}, 'Signed out. This phone is cleared.'),
+
+      auth: AU, isSigninMode: AU.mode === 'signin', isSignupMode: AU.mode === 'signup',
+      siBg: sel(AU.mode === 'signin').bg, siFg: sel(AU.mode === 'signin').fg, suBg: sel(AU.mode === 'signup').bg, suFg: sel(AU.mode === 'signup').fg,
+      setSigninMode: () => this.setAuth({ mode: 'signin', error: '' }), setSignupMode: () => this.setAuth({ mode: 'signup', error: '' }),
+      onAuthEmail: e => this.setAuth({ email: e.target.value, error: '' }), onAuthPassword: e => this.setAuth({ password: e.target.value, error: '' }),
+      onAuthYear: e => this.setAuth({ birthYear: e.target.value.replace(/\D/g, ''), error: '' }),
+      onParentEmail: e => this.setAuth({ parentEmail: e.target.value, error: '' }),
+      onDeleteText: e => this.setAuth({ deleteText: e.target.value }),
+      toggleAgree: () => this.setAuth({ agreed: !AU.agreed, error: '' }), agreeBox: AU.agreed ? 'var(--color-accent)' : 'transparent',
+      authError: AU.error, authSubmitLabel: AU.mode === 'signin' ? 'Sign in' : 'Create account',
+      authEmail: () => this.submitAuth('email'), authGoogle: () => this.submitAuth('google'),
+      goForgot: () => { this.setAuth({ forgotSent: false, error: '' }); this.go('forgot'); },
+      forgotForm: !AU.forgotSent, forgotSent: AU.forgotSent,
+      sendReset: () => { if (!/.+@.+\..+/.test(AU.email)) return this.setAuth({ error: 'Enter a valid email address.' }); this.setAuth({ forgotSent: true, error: '' }); },
+      resendReset: () => this.toast(`Sent again to ${AU.email}.`),
+      consentForm: !AU.consentSent, consentSent: AU.consentSent,
+      sendConsent: () => {
+        if (!/.+@.+\..+/.test(AU.parentEmail)) return this.setAuth({ error: "Enter your parent or guardian's email." });
+        if (AU.parentEmail.trim().toLowerCase() === AU.email.trim().toLowerCase()) return this.setAuth({ error: 'Use a different email from your own.' });
+        this.setAcct({ status: 'pendingConsent', parentEmail: AU.parentEmail });
+        this.setAuth({ consentSent: true, error: '' });
+      },
+      skipConsent: () => { this.go('home'); this.toast('Saved on this phone only. You can sign in later from Settings.'); },
+      parentApproves: () => this.startUpload('up'),
+      uploadTitle: upDone ? (down ? 'Your data is back' : 'All copied') : (down ? 'Getting your data' : 'Copying this phone to your account'),
+      uploadBody: upDone ? `Sign in on your PC with ${AC.email || AU.email} to see the same numbers.` : (down ? 'Downloading everything saved in your account.' : 'Everything already on this phone goes into your account, so nothing starts from zero.'),
+      uploadPct: AU.progress + '%', uploadDone: upDone, uploadBusy: !upDone,
+      uploadItems: upItems.map(([label, val], i) => { const d = AU.progress >= (i + 1) * 20; return { label, val: String(val), status: d ? 'Done' : '…', fg: d ? 'var(--color-text)' : 'var(--color-neutral-700)' }; }),
+      restoreAcct: () => { this.toast('Deletion cancelled. Welcome back.'); this.startUpload('down'); },
+      keepDeletion: () => { this.go('home'); this.toast(`Still scheduled for ${AC.deletionAt}.`); },
+      deletePreviewDate: DELETE_ON, deleteDisabled: AU.deleteText.trim() !== 'DELETE',
+      confirmDelete: () => { if (AU.deleteText.trim() !== 'DELETE') return; this.clearPhone({ deletionAt: DELETE_ON }, `Account set to be deleted on ${DELETE_ON}.`); },
+      signOutOpen: S.signOutOpen,
+      acctOpts: [['out', 'Signed out'], ['in', 'Signed in'], ['pendingConsent', 'Parent wait']].map(([k, label]) => Object.assign({ label, on: AC.status === k, onClick: () => setAcctState(k) }, accSel(AC.status === k))),
+      netOpts: [[true, 'Online'], [false, 'Offline']].map(([k, label]) => Object.assign({ label, on: SY.online === k, onClick: () => this.setOnline(k) }, accSel(SY.online === k))),
+
       zoom: S.zoom, scrollRef: this.scrollRef, screenLabel: (SCREENS.find(s => s[0] === scr) || [0, scr])[1],
       patternNames: this.props.patternNames ?? true,
       showState, isLoading: S.dataState === 'loading', stateScreenTitle: titles[scr], stateTitle, stateBody, stateAction, onStateAction,

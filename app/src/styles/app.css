@@ -196,3 +196,25 @@ a:hover { color: var(--color-accent-800); }
 .nav-log:active { background: var(--color-accent-700); }
 .cat-cell:active { background: var(--color-accent-100); }
 .key:active { background: var(--color-neutral-300); }
+
+/* — account screens — */
+.list-btn {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 0 20px;
+  border: 0; border-top: 1px solid var(--color-neutral-300); background: transparent; cursor: pointer;
+  font-size: 15px; color: var(--color-text); text-align: left; width: 100%;
+}
+.list-btn.danger { font-weight: 600; color: var(--color-accent-700); }
+.kv-row {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 14px 20px;
+  border-top: 1px solid var(--color-neutral-300); font-size: 15px;
+}
+.sync-dot { width: 8px; height: 8px; flex: none; }
+.home-head { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 20px; min-height: 60px; }
+.sign-prompt {
+  margin: 0 20px 16px; border: 2px solid var(--color-text);
+  display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: start;
+}
+@media (hover: hover) {
+  .list-btn:hover { background: var(--color-surface); }
+  .list-btn.danger:hover { background: var(--color-accent-100); }
+}

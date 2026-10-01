@@ -73,22 +73,38 @@ function makeActions(update: (fn: (d: Data) => Data) => void) {
 
 export type Actions = ReturnType<typeof makeActions>;
 
-interface StoreValue {
+type StoreState = {
   status: 'ready' | 'new' | 'error';
   data: Data | null;
+  /** Counts changes made on this phone (not ones that came from the account). Sync watches it. */
+  edits: number;
+};
+
+interface StoreValue extends StoreState {
   actions: Actions;
   start: (settings: Settings, goal: Goal | null) => void;
   retry: () => void;
+  /** Puts data from the account in place of what's here. Doesn't count as an edit. */
+  replace: (data: Data) => void;
+  /** Clears this phone after signing out or deleting the account. Keeps only the weekly setup. */
+  wipe: () => void;
+  /** The latest data right now, even before React re-renders. */
+  getData: () => Data | null;
+  getEdits: () => number;
   saveFailed: boolean;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
 
+function fromStorage(): StoreState {
+  const r = load();
+  return r.ok ? { status: r.data ? 'ready' : 'new', data: r.data, edits: 0 } : { status: 'error', data: null, edits: 0 };
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState(() => {
-    const r = load();
-    return r.ok ? { status: r.data ? ('ready' as const) : ('new' as const), data: r.data } : { status: 'error' as const, data: null };
-  });
+  const [state, setState] = useState(fromStorage);
+  // The ref is the source of truth so sync can read and write without waiting for a render.
+  const ref = useRef(state);
   const [saveFailed, setSaveFailed] = useState(false);
   const first = useRef(true);
 
@@ -101,22 +117,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (state.status === 'ready' && state.data) setSaveFailed(!save(state.data));
   }, [state]);
 
-  const update = useCallback((fn: (d: Data) => Data) => {
-    setState(s => (s.data ? { ...s, data: fn(s.data) } : s));
+  const commit = useCallback((next: StoreState) => {
+    ref.current = next;
+    setState(next);
   }, []);
+
+  const update = useCallback((fn: (d: Data) => Data) => {
+    const s = ref.current;
+    if (s.data) commit({ ...s, data: fn(s.data), edits: s.edits + 1 });
+  }, [commit]);
   const actions = useMemo(() => makeActions(update), [update]);
 
   const value = useMemo<StoreValue>(() => ({
-    status: state.status,
-    data: state.data,
+    ...state,
     actions,
     saveFailed,
-    start: (settings, goal) => setState({ status: 'ready', data: emptyData(settings, goal) }),
-    retry: () => {
-      const r = load();
-      setState(r.ok ? { status: r.data ? 'ready' : 'new', data: r.data } : { status: 'error', data: null });
+    start: (settings, goal) => commit({ status: 'ready', data: emptyData(settings, goal), edits: ref.current.edits + 1 }),
+    retry: () => commit({ ...fromStorage(), edits: ref.current.edits }),
+    replace: data => commit({ status: 'ready', data, edits: ref.current.edits }),
+    wipe: () => {
+      const s = ref.current;
+      if (s.data) commit({ status: 'ready', data: emptyData(s.data.settings, null), edits: s.edits });
     },
-  }), [state, actions, saveFailed]);
+    getData: () => ref.current.data,
+    getEdits: () => ref.current.edits,
+  }), [state, actions, saveFailed, commit]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

@@ -4,7 +4,7 @@ import { cleanAmount, money0 } from '../lib/format';
 import type { Goal, Settings } from '../lib/types';
 
 /** First-run setup: 4 steps. */
-export function Onboarding({ onDone }: { onDone: (settings: Settings, goal: Goal | null) => void }) {
+export function Onboarding({ onDone, onSignIn }: { onDone: (settings: Settings, goal: Goal | null) => void; onSignIn?: () => void }) {
   const [step, setStep] = useState(0);
   const [income, setIncome] = useState<string[]>([]);
   const [weekStr, setWeekStr] = useState('');
@@ -75,6 +75,9 @@ export function Onboarding({ onDone }: { onDone: (settings: Settings, goal: Goal
           {step === 2 && !goalOk ? 'Skip for now' : step === 3 ? 'Start logging' : 'Continue'}
         </button>
       </div>
+      {step === 0 && onSignIn && (
+        <button className="btn btn-ghost btn-link" style={{ marginTop: -8 }} onClick={onSignIn}>I already have an account</button>
+      )}
     </div>
   );
 }

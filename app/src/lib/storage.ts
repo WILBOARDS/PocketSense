@@ -27,6 +27,24 @@ export function save(data: Data): boolean {
   }
 }
 
+/** Small JSON values the account code keeps next to the app data. */
+export function loadJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? { ...fallback, ...JSON.parse(raw) } : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function saveJson(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Losing this only means sync re-checks with the server next time.
+  }
+}
+
 export function loadPhoto(): string | null {
   try {
     return localStorage.getItem(PHOTO_KEY);
