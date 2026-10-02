@@ -1,41 +1,71 @@
-import { useState } from 'react';
-import { ClsBadge } from '../components/common';
+import { useEffect, useRef, useState } from 'react';
+import { ClsBadge, Dropdown } from '../components/common';
 import { X } from '../components/icons';
-import { CATS, CLS, INCOME_SRC, MOODS } from '../lib/constants';
+import { CATS, INCOME_SRC, MOODS, catShort, moodLabel, purchaseName, wordLabel } from '../lib/constants';
 import { classifier, repeatCandidates, weekStats } from '../lib/derive';
-import { money } from '../lib/format';
+import { currencySymbol, isRupiah, money } from '../lib/format';
+import { tr } from '../lib/i18n';
 import { useData, walletsOf } from '../lib/store';
 import type { CatId } from '../lib/types';
 import { useUi, type LogPrefill } from '../ui';
 
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'];
+/** Rupiah has no cents, so the key left of 0 adds three zeros instead of a decimal point. */
+const keys = () => ['1', '2', '3', '4', '5', '6', '7', '8', '9', isRupiah() ? '000' : '.', '0', 'del'];
+
+/** The typed amount as shown: "25.000" in Rupiah, "12.5" in dollars. */
+const shown = (a: string) => (isRupiah() && a ? Number(a).toLocaleString('id-ID') : a);
 
 export function QuickLog({ prefill, onClose }: { prefill?: LogPrefill; onClose: () => void }) {
   const { data, actions } = useData();
   const { now, openWhy } = useUi();
   const [mode, setMode] = useState<'purchase' | 'income'>('purchase');
-  const [amt, setAmt] = useState(prefill?.amt ? String(prefill.amt) : '');
+  const [amt, setAmt] = useState(prefill?.amt ? String(isRupiah() ? Math.round(prefill.amt) : prefill.amt) : '');
+  const [cat, setCat] = useState<CatId | null>(prefill?.cat ?? null);
+  const [custom, setCustom] = useState('');
   const [hint, setHint] = useState('');
   const [savedId, setSavedId] = useState<string | null>(null);
   const [savedIncome, setSavedIncome] = useState<{ src: string; amt: number } | null>(null);
 
   const week = weekStats(data, now);
   const amtNum = parseFloat(amt) || 0;
-  const pctOfWeek = (n: number) => `About ${Math.max(1, Math.round((n / Math.max(1, week.weekMoney)) * 100))}% of your week`;
+  const pctOfWeek = (n: number) => {
+    const pct = Math.max(1, Math.round((n / Math.max(1, week.weekMoney)) * 100));
+    return tr(`About ${pct}% of your week`, `Sekitar ${pct}% dari jatah minggumu`);
+  };
 
   const press = (k: string) => {
     let a = amt;
     if (k === 'del') a = a.slice(0, -1);
     else if (k === '.') { if (!a.includes('.')) a = (a || '0') + '.'; }
-    else if (/\.\d\d$/.test(a) || a.replace('.', '').length >= 7) return;
+    else if (k === '000') { if (!a || a.length > 9) return; a += '000'; }
+    else if (/\.\d\d$/.test(a) || a.replace('.', '').length >= (isRupiah() ? 12 : 7)) return;
     else a = (a === '0' ? '' : a) + k;
     setAmt(a);
     setHint('');
   };
 
-  const saveCat = (cat: CatId, name: string) => {
-    if (!amtNum) return setHint('Type an amount first, then tap a category.');
-    setSavedId(actions.addPurchase({ name: prefill?.name ?? name, cat, amt: amtNum }));
+  // A physical keyboard types into the amount too (on a PC, or a phone with one).
+  const pressRef = useRef(press);
+  pressRef.current = press;
+  const typing = !savedId && !savedIncome;
+  useEffect(() => {
+    if (!typing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (/^\d$/.test(e.key)) pressRef.current(e.key);
+      else if (e.key === 'Backspace') pressRef.current('del');
+      else if ((e.key === '.' || e.key === ',') && !isRupiah()) pressRef.current('.');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [typing]);
+
+  const save = () => {
+    if (!amtNum) return setHint(tr('Type an amount first.', 'Ketik jumlahnya dulu.'));
+    if (!cat) return setHint(tr('Pick a category first.', 'Pilih kategori dulu.'));
+    if (cat === 'other' && !custom.trim()) return setHint(tr('Name your category first.', 'Tulis nama kategorinya dulu.'));
+    const name = prefill?.name ?? (cat === 'other' ? custom.trim() : catShort(cat));
+    setSavedId(actions.addPurchase({ name, cat, amt: amtNum }));
   };
 
   const saved = savedId ? data.purchases.find(p => p.id === savedId) : undefined;
@@ -46,54 +76,56 @@ export function QuickLog({ prefill, onClose }: { prefill?: LogPrefill; onClose: 
   return (
     <div className="overlay" style={{ zIndex: 20 }}>
       <div className="backdrop" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-modal="true" aria-label="Quick log">
+      <div className="sheet" role="dialog" aria-modal="true" aria-label={tr('Log a purchase', 'Catat pembelian')}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 8px 8px 20px' }}>
           {!saved && !savedIncome ? (
-            <div role="radiogroup" aria-label="Type" className="seg-grid ink" style={{ display: 'flex' }}>
-              <button role="radio" aria-checked={mode === 'purchase'} onClick={() => { setMode('purchase'); setHint(''); }}>Purchase</button>
-              <button role="radio" aria-checked={mode === 'income'} onClick={() => { setMode('income'); setHint(''); }}>Income</button>
+            <div role="radiogroup" aria-label={tr('Type', 'Jenis')} className="seg-grid ink" style={{ display: 'flex' }}>
+              <button role="radio" aria-checked={mode === 'purchase'} onClick={() => { setMode('purchase'); setHint(''); }}>{tr('Purchase', 'Pembelian')}</button>
+              <button role="radio" aria-checked={mode === 'income'} onClick={() => { setMode('income'); setHint(''); }}>{tr('Income', 'Pemasukan')}</button>
             </div>
-          ) : <div className="t13 w6 accent-text">{saved ? 'Saved' : 'Added'}</div>}
+          ) : <div className="t13 w6 accent-text">{saved ? tr('Saved', 'Tersimpan') : tr('Added', 'Ditambahkan')}</div>}
           <div className="grow" />
-          <button className="icon-btn" aria-label="Close" onClick={onClose}><X /></button>
+          <button className="icon-btn" aria-label={tr('Close', 'Tutup')} onClick={onClose}><X /></button>
         </div>
 
         {!saved && !savedIncome && <>
           <div style={{ padding: '4px 20px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
             {prefill?.name && <div className="t13 w6">{prefill.name}</div>}
-            <div aria-live="polite" style={{ fontSize: 56, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.02em', color: amt ? 'var(--color-text)' : 'var(--color-neutral-500)' }}>
-              ${amt || '0'}
+            <div aria-live="polite" style={{ fontSize: 52, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.02em', overflowWrap: 'anywhere', color: amt ? 'var(--color-text)' : 'var(--color-neutral-500)' }}>
+              {currencySymbol()}{isRupiah() ? ' ' : ''}{shown(amt) || '0'}
             </div>
             <div className="t13 muted" style={{ minHeight: 18 }} role={hint ? 'alert' : undefined}>
-              {hint || (amtNum ? pctOfWeek(amtNum) : mode === 'purchase' ? 'Type an amount, then tap a category' : 'Type an amount, then tap where it came from')}
+              {hint || (amtNum ? pctOfWeek(amtNum) : mode === 'purchase'
+                ? tr('Type an amount, pick a category, then save', 'Ketik jumlah, pilih kategori, lalu simpan')
+                : tr('Type an amount, then tap where it came from', 'Ketik jumlah, lalu pilih asalnya'))}
             </div>
           </div>
 
           {mode === 'purchase' ? <>
-            {!prefill && <RepeatChips onPick={(name, cat, a) => { setAmt(String(a)); setSavedId(actions.addPurchase({ name, cat, amt: a })); }} />}
-            <div className="cat-grid">
-              {CATS.map(c => (
-                <button key={c.id} className="cat-cell" onClick={() => saveCat(c.id, c.short ?? c.name)}>
-                  <span className="t13 w6">{c.short ?? c.name}</span>
-                  <span className="t11 muted">{CLS[c.cls].label}</span>
-                </button>
-              ))}
+            {!prefill && <RepeatChips onPick={(name, c, a) => { setAmt(String(a)); setSavedId(actions.addPurchase({ name, cat: c, amt: a })); }} />}
+            <div style={{ padding: '0 20px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="t13 muted">{tr('Category', 'Kategori')}</div>
+              <Dropdown label={tr('Category', 'Kategori')} placeholder={tr('Pick a category', 'Pilih kategori')}
+                options={CATS.map(c => ({ value: c.id, label: catShort(c.id) }))}
+                value={cat} onPick={c => { setCat(c); setHint(''); }}
+                customLabel={tr('Custom…', 'Kustom…')} customValue={'other' as CatId} custom={custom} onCustom={setCustom} />
+              <button className="btn btn-primary btn-lg" onClick={save}>{tr('Save', 'Simpan')}</button>
             </div>
           </> : (
             <div className="cat-grid three">
               {incomeSrc.map(src => (
                 <button key={src} className="cat-cell t14 w6" style={{ minHeight: 56, padding: '8px 12px' }} onClick={() => {
-                  if (!amtNum) return setHint('Type an amount first, then tap a source.');
+                  if (!amtNum) return setHint(tr('Type an amount first, then tap a source.', 'Ketik jumlah dulu, lalu pilih asalnya.'));
                   actions.addIncome(src, amtNum);
                   setSavedIncome({ src, amt: amtNum });
-                }}>{src}</button>
+                }}>{wordLabel(src)}</button>
               ))}
             </div>
           )}
 
           <div className="keypad">
-            {KEYS.map(k => (
-              <button key={k} className="key" onClick={() => press(k)} aria-label={k === 'del' ? 'Delete' : k}>{k === 'del' ? '⌫' : k}</button>
+            {keys().map(k => (
+              <button key={k} className="key" onClick={() => press(k)} aria-label={k === 'del' ? tr('Delete', 'Hapus') : k}>{k === 'del' ? '⌫' : k}</button>
             ))}
           </div>
         </>}
@@ -102,9 +134,11 @@ export function QuickLog({ prefill, onClose }: { prefill?: LogPrefill; onClose: 
 
         {savedIncome && (
           <div style={{ padding: '8px 20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.1 }}>{money(savedIncome.amt)} from {savedIncome.src}</div>
-            <div className="t15">You now have {money(week.left)} left this week.</div>
-            <button className="btn btn-primary btn-lg" onClick={onClose}>Done</button>
+            <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.1 }}>
+              {tr(`${money(savedIncome.amt)} from ${savedIncome.src}`, `${money(savedIncome.amt)} dari ${wordLabel(savedIncome.src)}`)}
+            </div>
+            <div className="t15">{tr(`You now have ${money(week.left)} left this week.`, `Sisa uangmu minggu ini sekarang ${money(week.left)}.`)}</div>
+            <button className="btn btn-primary btn-lg" onClick={onClose}>{tr('Done', 'Selesai')}</button>
           </div>
         )}
       </div>
@@ -121,7 +155,7 @@ function RepeatChips({ onPick }: { onPick: (name: string, cat: CatId, amt: numbe
     <div className="hscroll" style={{ padding: '0 20px 12px' }}>
       {chips.map(r => (
         <button key={`${r.name}|${r.amt}`} className="repeat-chip" onClick={() => onPick(r.name, r.cat, r.amt)}>
-          Repeat · {r.name} {money(r.amt)}
+          {tr('Repeat', 'Ulangi')} · {purchaseName(r)} {money(r.amt)}
         </button>
       ))}
     </div>
@@ -136,27 +170,29 @@ function SavedPurchase({ id, weightLine, onWhy, onDone }: { id: string; weightLi
   return (
     <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ fontSize: 24, fontWeight: 800, overflowWrap: 'anywhere' }}>{p.name}</div>
-        <div style={{ fontSize: 24, fontWeight: 800 }}>{money(p.amt)}</div>
+        <div style={{ fontSize: 24, fontWeight: 800, overflowWrap: 'anywhere' }}>{purchaseName(p)}</div>
+        <div style={{ fontSize: 24, fontWeight: 800, whiteSpace: 'nowrap' }}>{money(p.amt)}</div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <ClsBadge cls={cls} onClick={onWhy} big />
         <span className="t13 muted">{weightLine}</span>
       </div>
       <div className="rule" />
-      <div className="t15 w6">How were you feeling? <span className="muted" style={{ fontWeight: 400 }}>Optional</span></div>
+      <div className="t15 w6">{tr('How were you feeling?', 'Lagi merasa apa?')} <span className="muted" style={{ fontWeight: 400 }}>{tr('Optional', 'Opsional')}</span></div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {MOODS.map(m => (
-          <button key={m} className="choice" aria-pressed={p.mood === m} onClick={() => actions.setMood(p.id, p.mood === m ? null : m)}>{m}</button>
+          <button key={m} className="choice" aria-pressed={p.mood === m} onClick={() => actions.setMood(p.id, p.mood === m ? null : m)}>{moodLabel(m)}</button>
         ))}
       </div>
-      <div className="t15 w6">Paid with</div>
-      <div role="radiogroup" aria-label="Wallet" className="seg-grid">
+      <div className="t15 w6">{tr('Paid with', 'Bayar pakai')}</div>
+      {/* Up to 4 wallets fit in one row; more wrap as chips. */}
+      <div role="radiogroup" aria-label={tr('Paid with', 'Bayar pakai')} className={wallets.length > 4 ? 'wrap-row' : 'seg-grid'}>
         {wallets.map(w => (
-          <button key={w} role="radio" aria-checked={p.wallet === w} onClick={() => actions.setWallet(p.id, w)} style={{ minHeight: 44, fontSize: 14 }}>{w}</button>
+          <button key={w} role="radio" aria-checked={p.wallet === w} className={wallets.length > 4 ? 'choice' : undefined}
+            onClick={() => actions.setWallet(p.id, w)} style={{ minHeight: 44, fontSize: 14 }}>{wordLabel(w)}</button>
         ))}
       </div>
-      <button className="btn btn-primary btn-lg" onClick={onDone}>Done</button>
+      <button className="btn btn-primary btn-lg" onClick={onDone}>{tr('Done', 'Selesai')}</button>
     </div>
   );
 }

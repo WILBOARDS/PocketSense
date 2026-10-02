@@ -218,3 +218,79 @@ a:hover { color: var(--color-accent-800); }
   .list-btn:hover { background: var(--color-surface); }
   .list-btn.danger:hover { background: var(--color-accent-100); }
 }
+
+/* — dropdown (category pickers) — */
+.dropdown { position: relative; display: flex; flex-direction: column; gap: 8px; }
+.dropdown-btn {
+  padding: 0 12px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--color-text);
+  background: var(--color-surface); cursor: pointer; font-size: 16px; font-weight: 600; text-align: left;
+}
+.dropdown-list {
+  position: absolute; left: 0; right: 0; z-index: 10; background: var(--color-bg); border: 2px solid var(--color-text);
+  box-shadow: var(--shadow-lg); max-height: 288px; overflow-y: auto;
+}
+.dropdown-opt {
+  width: 100%; min-height: 44px; padding: 0 12px; display: flex; align-items: center; border: 0;
+  border-bottom: 1px solid var(--color-neutral-300); cursor: pointer; font-size: 15px; text-align: left;
+  background: transparent; color: var(--color-text);
+}
+.dropdown-opt.sep { border-top: 2px solid var(--color-divider); }
+.dropdown-opt[aria-selected='true'] { background: var(--color-text); color: var(--color-bg); }
+
+/* — switch — */
+.switch {
+  width: 52px; height: 30px; flex: none; border: 2px solid var(--color-text); padding: 3px;
+  display: flex; justify-content: flex-start; cursor: pointer; background: transparent;
+}
+.switch > span { width: 20px; height: 20px; display: block; background: var(--color-text); }
+.switch[aria-checked='true'] { justify-content: flex-end; background: var(--color-accent); }
+.switch[aria-checked='true'] > span { background: #fff; }
+
+/* — filter chips (Parking lot, Spending) — */
+.chip {
+  flex: none; min-height: 44px; padding: 0 14px; font-size: 14px; cursor: pointer;
+  border: 1px solid var(--color-divider); background: transparent; color: var(--color-text);
+}
+.chip[aria-pressed='true'] { background: var(--color-text); color: var(--color-bg); }
+.tag-promo { border-color: var(--color-accent-400); background: var(--color-accent-100); color: var(--color-accent-800); }
+
+/* — link box (shared or pasted links) — */
+.link-box {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--color-neutral-700);
+  background: var(--color-surface); padding: 8px 10px; min-width: 0;
+}
+.link-box > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* — Ask — */
+.bubble-q { align-self: flex-end; max-width: 82%; background: var(--color-text); color: var(--color-bg); padding: 12px 14px; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+.answer { background: var(--color-surface); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.note-box { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.45; padding: 10px 12px; border: 1px solid var(--color-divider); }
+.note-box > svg { flex: none; margin-top: 2px; }
+.danger-btn {
+  width: 100%; min-height: 52px; padding: 0 20px; display: flex; align-items: center; justify-content: flex-start;
+  border: 0; background: var(--color-accent-700); color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; text-align: left;
+}
+.danger-btn:active { background: var(--color-accent-900); }
+.danger-btn:disabled { opacity: 0.6; cursor: default; }
+
+@media (hover: hover) {
+  .dropdown-btn:hover { border-color: var(--color-accent); }
+  .dropdown-opt:not([aria-selected='true']):hover { background: var(--color-surface); }
+  .chip:not([aria-pressed='true']):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+  .danger-btn:hover { background: var(--color-accent-800); }
+}
+.goal-strip {
+  display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; padding: 20px; width: 100%;
+  border: 0; background: transparent; color: var(--color-text); text-align: left; cursor: pointer; font-family: inherit;
+}
+@media (hover: hover) { .goal-strip:hover { background: var(--color-surface); } }
+.wrap-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice[aria-checked='true'] { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+.pref-row { width: 100%; border-left: 0; border-right: 0; border-bottom: 0; background: transparent; color: var(--color-text); cursor: pointer; text-align: left; font-family: inherit; }
+@media (hover: hover) { .pref-row:hover { background: var(--color-surface); } }
+.send-btn {
+  width: 48px; height: 48px; border: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--color-accent); color: #fff; cursor: pointer;
+}
+.send-btn:disabled { opacity: 0.5; cursor: default; }
+@media (hover: hover) { .send-btn:not(:disabled):hover { background: var(--color-accent-600); } }

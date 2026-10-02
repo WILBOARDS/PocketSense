@@ -1,4 +1,5 @@
 // Pure helpers for syncing the app data with the account. No network or storage here, so they can be tested.
+import { tr } from './i18n';
 import type { Data } from './types';
 
 /** No purchases, income, savings, parked items or look-backs yet: just onboarding answers at most. */
@@ -51,30 +52,48 @@ export type AccountStatus = 'off' | 'out' | 'in' | 'pendingConsent';
 /** The status line under the date on Home and in Settings. Empty label when signed out. */
 export function syncView(status: AccountStatus, online: boolean, pending: number, syncing: boolean): SyncView {
   const ink = 'var(--color-text)', grey = 'var(--color-neutral-500)';
-  if (status === 'pendingConsent') return { label: 'Sync waits for parent', dot: grey, fg: ink };
+  if (status === 'pendingConsent') return { label: tr('Sync waits for parent', 'Sinkron menunggu orang tua'), dot: grey, fg: ink };
   if (status !== 'in') return { label: '', dot: ink, fg: ink };
   if (!online) {
     return {
-      label: pending ? `Offline · ${pending} change${pending > 1 ? 's' : ''} waiting` : 'Offline',
+      label: pending ? tr(`Offline · ${pending} change${pending > 1 ? 's' : ''} waiting`, `Offline · ${pending} perubahan menunggu`) : 'Offline',
       dot: 'var(--color-accent)', fg: 'var(--color-accent-700)',
     };
   }
-  if (syncing || pending) return { label: 'Syncing…', dot: grey, fg: ink };
-  return { label: 'Synced', dot: ink, fg: ink };
+  if (syncing || pending) return { label: tr('Syncing…', 'Menyinkronkan…'), dot: grey, fg: ink };
+  return { label: tr('Synced', 'Tersinkron'), dot: SYNCED_GREEN, fg: ink };
 }
 
 /** Turns Supabase auth errors into sentences for the sign-in screen. */
 export function authMessage(err: { message?: string; status?: number; code?: string } | null | undefined): string {
   const m = (err?.message ?? '').toLowerCase();
   const code = err?.code ?? '';
-  if (code === 'invalid_credentials' || m.includes('invalid login')) return 'Wrong email or password.';
-  if (code === 'user_already_exists' || m.includes('already registered')) return "There's already an account with this email. Sign in instead.";
-  if (code === 'email_not_confirmed' || m.includes('not confirmed')) return 'Confirm your email first. Check your inbox for the link.';
-  if (code === 'weak_password' || m.includes('password should')) return 'Pick a stronger password: at least 8 characters, not a common one.';
-  if (code === 'same_password') return 'Use a different password from your old one.';
-  if (err?.status === 429 || m.includes('rate limit')) return 'Too many tries. Wait a minute and try again.';
-  if (m.includes('fetch') || m.includes('network') || err?.status === 0) return "Can't reach the server. Check your connection.";
-  return err?.message || 'Something went wrong. Try again.';
+  if (code === 'invalid_credentials' || m.includes('invalid login')) return tr('Wrong email or password.', 'Email atau kata sandi salah.');
+  if (code === 'user_already_exists' || m.includes('already registered')) {
+    return tr("There's already an account with this email. Sign in instead.", 'Sudah ada akun dengan email ini. Masuk saja.');
+  }
+  if (code === 'email_not_confirmed' || m.includes('not confirmed')) {
+    return tr('Confirm your email first. Check your inbox for the link.', 'Konfirmasi email dulu. Cek kotak masuk untuk link-nya.');
+  }
+  if (code === 'weak_password' || m.includes('password should')) {
+    return tr('Pick a stronger password: at least 8 characters, not a common one.', 'Pilih kata sandi yang lebih kuat: minimal 8 karakter, jangan yang umum.');
+  }
+  if (code === 'same_password') return tr('Use a different password from your old one.', 'Pakai kata sandi yang beda dari yang lama.');
+  if (err?.status === 429 || m.includes('rate limit')) return tr('Too many tries. Wait a minute and try again.', 'Terlalu banyak percobaan. Tunggu semenit lalu coba lagi.');
+  if (m.includes('fetch') || m.includes('network') || err?.status === 0) return offlineMsg();
+  return err?.message || tr('Something went wrong. Try again.', 'Ada yang salah. Coba lagi.');
 }
+
+export const offlineMsg = () => tr("Can't reach the server. Check your connection.", 'Tidak bisa terhubung ke server. Cek koneksimu.');
+
+/** The green square next to "Synced". */
+export const SYNCED_GREEN = 'oklch(0.62 0.17 145)';
+
+/** "r***@example.com": enough to recognise your own account without showing it to someone nearby. */
+export const maskEmail = (email: string | null) => {
+  if (!email) return '';
+  const at = email.indexOf('@');
+  return at > 0 ? `${email[0]}***${email.slice(at)}` : email;
+};
 
 export const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { DEFAULT_WALLETS } from './constants';
+import { defaultWallets } from './constants';
 import { newId } from './format';
+import { normalize } from './migrate';
 import { load, save } from './storage';
 import type { CatId, Cls, Data, Feeling, Goal, Parked, Purchase, Settings, Usage } from './types';
 
@@ -12,7 +13,17 @@ export function emptyData(settings: Settings, goal: Goal | null): Data {
   };
 }
 
-export const walletsOf = (d: Data) => (d.settings.wallets.length ? d.settings.wallets : DEFAULT_WALLETS);
+export const walletsOf = (d: Data) => (d.settings.wallets.length ? d.settings.wallets : defaultWallets(d.settings.currency));
+
+export interface ParkInput {
+  name: string;
+  price: number;
+  minutes: number;
+  cat?: string;
+  promo?: boolean;
+  url?: string;
+  src?: string;
+}
 
 function makeActions(update: (fn: (d: Data) => Data) => void) {
   const patchPurchase = (id: string, patch: Partial<Purchase>) =>
@@ -22,6 +33,7 @@ function makeActions(update: (fn: (d: Data) => Data) => void) {
 
   return {
     setGoal: (goal: Goal) => update(d => ({ ...d, goal })),
+    setPrefs: (patch: Partial<Settings>) => update(d => ({ ...d, settings: { ...d.settings, ...patch } })),
     addPurchase: (p: { name: string; cat: CatId; amt: number }) => {
       const id = newId('p');
       update(d => {
@@ -41,11 +53,11 @@ function makeActions(update: (fn: (d: Data) => Data) => void) {
       update(d => ({ ...d, incomes: [{ id: newId('i'), src, amt, at: Date.now() }, ...d.incomes] })),
     addContrib: (label: string, amt: number) =>
       update(d => ({ ...d, contribs: [...d.contribs, { id: newId('c'), label, amt, at: Date.now() }] })),
-    park: (name: string, price: number, minutes: number) => {
+    park: ({ minutes, ...item }: ParkInput) => {
       const now = Date.now();
       update(d => ({
         ...d,
-        parking: [{ id: newId('k'), name, price, createdAt: now, endsAt: now + minutes * 60000, outcome: 'pending' }, ...d.parking],
+        parking: [{ id: newId('k'), ...item, createdAt: now, endsAt: now + minutes * 60000, outcome: 'pending' }, ...d.parking],
       }));
     },
     decideParked: (id: string, outcome: 'skipped' | 'bought') => patchParked(id, { outcome, decidedAt: Date.now() }),
@@ -134,7 +146,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     saveFailed,
     start: (settings, goal) => commit({ status: 'ready', data: emptyData(settings, goal), edits: ref.current.edits + 1 }),
     retry: () => commit({ ...fromStorage(), edits: ref.current.edits }),
-    replace: data => commit({ status: 'ready', data, edits: ref.current.edits }),
+    replace: data => commit({ status: 'ready', data: normalize(data), edits: ref.current.edits }),
     wipe: () => {
       const s = ref.current;
       if (s.data) commit({ status: 'ready', data: emptyData(s.data.settings, null), edits: s.edits });

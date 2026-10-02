@@ -1,6 +1,6 @@
 // Offline support: serve the app shell from cache, refresh it in the background.
 // All user data lives in localStorage, so nothing here touches it.
-const CACHE = 'pocket-sense-v2';
+const CACHE = 'pocket-sense-v3';
 // The app's home page, e.g. https://example.com/ or https://user.github.io/PocketSense/
 const HOME = self.registration.scope;
 

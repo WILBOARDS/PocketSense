@@ -1,4 +1,5 @@
 import { useRef, useState, type CSSProperties } from 'react';
+import { tr } from '../lib/i18n';
 import { useUi } from '../ui';
 import { ImagePlus } from './icons';
 
@@ -32,7 +33,7 @@ export function GoalPhoto({ pct, placeholder, editable, style }: {
       {photo && <div className="photo-cover" style={{ height: `${100 - pct}%` }} />}
       {editable && (
         <>
-          <button className="photo-btn" onClick={() => input.current?.click()} aria-label={photo ? 'Change goal photo' : 'Add goal photo'} />
+          <button className="photo-btn" onClick={() => input.current?.click()} aria-label={photo ? tr('Change goal photo', 'Ganti foto target') : tr('Add goal photo', 'Tambah foto target')} />
           <input ref={input} className="sr-only" type="file" accept="image/*" tabIndex={-1}
             onChange={e => { pick(e.target.files); e.target.value = ''; }} />
         </>

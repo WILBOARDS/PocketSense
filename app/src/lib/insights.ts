@@ -2,6 +2,7 @@ import { CLS_KEYS, LEARNING_DAYS } from './constants';
 import { addDays, daysBetween } from './dates';
 import { classifier, parkingStats, weekStats } from './derive';
 import { capitalize, money0, plural } from './format';
+import { tr } from './i18n';
 import type { Cls, Data } from './types';
 
 /*
@@ -14,6 +15,8 @@ import type { Cls, Data } from './types';
  */
 
 const NEED_CATS = new Set(['meals', 'transport', 'school', 'savings']);
+
+const basedOn = (n: number) => tr(`Based on ${plural(n, 'purchase')}`, `Dari ${n} pembelian`);
 
 export interface Impulse {
   score: number;
@@ -50,13 +53,13 @@ export function insights(data: Data, now: number) {
   let impulse: Impulse | null = null;
   if (W.length && impulsive >= 2) {
     const parts = [
-      lateNight ? plural(lateNight, 'late-night buy') : '',
-      boredStressed ? `${plural(boredStressed, 'purchase')} tagged Bored or Stressed` : '',
+      lateNight ? tr(plural(lateNight, 'late-night buy'), `${lateNight} pembelian larut malam`) : '',
+      boredStressed ? tr(`${plural(boredStressed, 'purchase')} tagged Bored or Stressed`, `${boredStressed} pembelian ditandai Bosan atau Stres`) : '',
     ].filter(Boolean);
     const line = parts.length
-      ? `This week had ${parts.join(', and ')}.`
-      : `This week had ${plural(impulsive, 'purchase')} tagged Treating myself.`;
-    impulse = { score: Math.round((impulsive / W.length) * 100), line, basis: `Based on ${plural(W.length, 'purchase')}`, lateNight };
+      ? tr(`This week had ${parts.join(', and ')}.`, `Minggu ini ada ${parts.join(', dan ')}.`)
+      : tr(`This week had ${plural(impulsive, 'purchase')} tagged Treating myself.`, `Minggu ini ada ${impulsive} pembelian ditandai Self-reward.`);
+    impulse = { score: Math.round((impulsive / W.length) * 100), line, basis: basedOn(W.length), lateNight };
   }
 
   // Leak: the most expensive small repeat buy over the last 4 weeks
@@ -76,17 +79,23 @@ export function insights(data: Data, now: number) {
     const perWeek = top.count / 4;
     const yearly = (top.total / top.count) * perWeek * 52;
     const yearlyStr = money0(Math.round(yearly / 10) * 10);
-    let line = `${capitalize(top.name)}, about ${Math.round(perWeek)} a week, adds up to about ${yearlyStr} a year.`;
+    const perWeekN = Math.round(perWeek);
+    let line = tr(`${capitalize(top.name)}, about ${perWeekN} a week, adds up to about ${yearlyStr} a year.`,
+      `${capitalize(top.name)}, sekitar ${perWeekN} kali seminggu, jadi sekitar ${yearlyStr} setahun.`);
     if (data.goal && data.goal.target > 0) {
       const times = Math.floor(yearly / data.goal.target);
+      const goal = data.goal.name.toLowerCase();
       line += times >= 2
-        ? ` That's your ${data.goal.name.toLowerCase()} ${times} times over.`
+        ? tr(` That's your ${goal} ${times} times over.`, ` Itu sama dengan ${goal} kamu ${times} kali.`)
         : times === 1
-          ? ` That's more than your ${data.goal.name.toLowerCase()}.`
-          : ` That's ${Math.round((yearly / data.goal.target) * 100)}% of your ${data.goal.name.toLowerCase()}.`;
+          ? tr(` That's more than your ${goal}.`, ` Itu lebih dari ${goal} kamu.`)
+          : tr(` That's ${Math.round((yearly / data.goal.target) * 100)}% of your ${goal}.`, ` Itu ${Math.round((yearly / data.goal.target) * 100)}% dari ${goal} kamu.`);
     }
     const share = yearly / Math.max(1, data.settings.weekMoney * 52);
-    leak = { score: Math.min(100, Math.round(share * 400)), line, basis: `Based on ${plural(top.count, 'buy')} in 4 weeks`, name: top.name };
+    leak = {
+      score: Math.min(100, Math.round(share * 400)), line, name: top.name,
+      basis: tr(`Based on ${plural(top.count, 'buy')} in 4 weeks`, `Dari ${top.count} pembelian dalam 4 minggu`),
+    };
   }
 
   const parking = parkingStats(data, now);
@@ -100,25 +109,28 @@ export function insights(data: Data, now: number) {
   if (bored.length >= 3 && needed.length >= 3) {
     const r = avg(bored) / avg(needed);
     boredVs = r >= 1
-      ? { value: `${r.toFixed(1)}x`, line: 'more per purchase when Bored' }
-      : { value: `${(1 / r).toFixed(1)}x`, line: 'less per purchase when Bored' };
+      ? { value: `${r.toFixed(1)}×`, line: tr('more per purchase when Bored', 'lebih mahal per pembelian saat Bosan') }
+      : { value: `${(1 / r).toFixed(1)}×`, line: tr('less per purchase when Bored', 'lebih murah per pembelian saat Bosan') };
   }
-  const boredBasis = `${bored.length} Bored, ${needed.length} Needed it`;
+  const boredBasis = tr(`${bored.length} Bored, ${needed.length} Needed it`, `${bored.length} Bosan, ${needed.length} Memang perlu`);
 
   // Regret rate
   const n = data.lookbacks.length;
   const regrets = data.lookbacks.filter(l => l.feeling === 'regret').length;
   let regret: string | null = null;
-  if (n >= 3) regret = regrets === 0 ? `0 of ${n}` : regrets / n > 0.5 ? `${regrets} of ${n}` : `1 in ${Math.round(n / regrets)}`;
+  const of = tr('of', 'dari');
+  if (n >= 3) regret = regrets === 0 ? `0 ${of} ${n}` : regrets / n > 0.5 ? `${regrets} ${of} ${n}` : `1 ${tr('in', 'dari')} ${Math.round(n / regrets)}`;
 
   // This week's one thing
   const oneThing = impulse
     ? impulse.lateNight
-      ? "If I'm bored after 10pm, I'll park it instead of buying."
-      : "If I'm bored or stressed, I'll park it instead of buying."
+      ? tr("If I'm bored after 10pm, I'll park it instead of buying.", 'Kalau bosan di atas jam 10 malam, aku parkir dulu, bukan langsung beli.')
+      : tr("If I'm bored or stressed, I'll park it instead of buying.", 'Kalau bosan atau stres, aku parkir dulu, bukan langsung beli.')
     : leak
-      ? `I'll skip one ${leak.name.toLowerCase()} this week${data.goal ? ' and add it to my goal' : ''}.`
-      : `I'll check anything over my ${data.settings.threshold}% line before buying.`;
+      ? tr(`I'll skip one ${leak.name.toLowerCase()} this week${data.goal ? ' and add it to my goal' : ''}.`,
+        `Minggu ini aku lewatkan satu ${leak.name.toLowerCase()}${data.goal ? ' dan masukkan ke targetku' : ''}.`)
+      : tr(`I'll check anything over my ${data.settings.threshold}% line before buying.`,
+        `Aku cek dulu apa pun yang lewat batas ${data.settings.threshold}%-ku sebelum beli.`);
 
   return {
     week,
@@ -130,7 +142,7 @@ export function insights(data: Data, now: number) {
     boredVs,
     boredBasis,
     regret,
-    regretBasis: `Based on ${plural(n, 'check-in')}`,
+    regretBasis: tr(`Based on ${plural(n, 'check-in')}`, `Dari ${n} tinjauan`),
     oneThing,
   };
 }

@@ -1,5 +1,7 @@
 export type Cls = 'need' | 'useful' | 'want' | 'invest';
-export type CatId = 'meals' | 'snacks' | 'transport' | 'school' | 'clothing' | 'subs' | 'games' | 'savings';
+/** 'other' is a category the user named themselves; the name is saved as the purchase name. */
+export type CatId = 'meals' | 'snacks' | 'transport' | 'school' | 'clothing' | 'subs' | 'games' | 'savings' | 'other';
+export type Currency = 'IDR' | 'USD';
 
 export interface Purchase {
   id: string;
@@ -36,6 +38,14 @@ export interface Parked {
   endsAt: number;
   outcome: 'pending' | 'skipped' | 'bought';
   decidedAt?: number;
+  /** A parking category id (see PARK_CATS) or a name the user typed. */
+  cat?: string;
+  /** Marked as a promo or flash sale. */
+  promo?: boolean;
+  /** Where it was shared or pasted from. */
+  url?: string;
+  /** Shop name from the link, e.g. Tokopedia. */
+  src?: string;
 }
 
 export type Feeling = 'worth' | 'meh' | 'regret';
@@ -60,6 +70,9 @@ export interface Settings {
   wallets: string[];
   /** Share of weekly money (%) above which a cooldown is suggested. */
   threshold: number;
+  /** Older data has none: it was all in dollars (see migrate.ts). */
+  currency?: Currency;
+  lang?: 'en' | 'id';
 }
 
 export interface Goal {
