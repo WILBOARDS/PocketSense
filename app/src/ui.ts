@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+import type { Layout } from './layout';
 import type { Lang } from './lib/i18n';
 import type { CatId } from './lib/types';
 
@@ -21,6 +22,8 @@ export interface ParkPrefill {
   price?: number;
   url?: string;
   src?: string;
+  /** Pasted into the desktop "Park something from a link" box, rather than shared from a shop app. */
+  pasted?: boolean;
 }
 
 export interface Ui {
@@ -36,6 +39,7 @@ export interface Ui {
   setPhoto: (file: File) => void;
   lang: Lang;
   setLang: (l: Lang) => void;
+  layout: Layout;
 }
 
 export const UiContext = createContext<Ui | null>(null);

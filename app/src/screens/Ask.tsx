@@ -36,14 +36,15 @@ let kept: Turn[] = [];
 
 export function Ask() {
   const acc = useAccount();
-  const { go } = useUi();
+  const { go, layout } = useUi();
   const signedIn = acc.enabled && acc.status === 'in';
   if (!signedIn) kept = [];
 
   return (
     <div className="screen-fill" style={{ height: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '8px 8px 8px 20px', minHeight: 60 }}>
-        <div className="page-title" style={{ flex: 1 }}>{tr('Ask', 'Tanya')}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: layout === 'full' ? '20px 28px' : '8px 8px 8px 20px', minHeight: 60 }}>
+        <span className={layout === 'full' ? 'wide-title' : 'page-title'}>{tr('Ask', 'Tanya')}</span>
+        {layout === 'full' && <span className="t14 muted">{tr('Can I afford it?', 'Mampu nggak?')}</span>}
       </div>
       <div className="rule" />
       {signedIn ? <Chat /> : (
@@ -128,7 +129,7 @@ function Chat() {
   };
 
   return <>
-    <div className="scroll" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="scroll chat-col" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
       <AiNote />
       {turns.length === 0 && (
         <div className="t15 muted pretty" style={{ lineHeight: 1.5 }}>
@@ -177,7 +178,7 @@ function Chat() {
       {busy && <div className="t14 muted" role="status">{tr('Thinking…', 'Sedang berpikir…')}</div>}
       <div ref={end} />
     </div>
-    <div style={{ flex: 'none', borderTop: '1px solid var(--color-neutral-300)' }}>
+    <div className="chat-col" style={{ flex: 'none', borderTop: '1px solid var(--color-neutral-300)' }}>
       {error && <div role="alert" className="t14 w6 accent-text" style={{ padding: '10px 20px 0' }}>{error}</div>}
       <div className="hscroll" style={{ padding: '8px 20px' }}>
         {suggestions.map(s => (

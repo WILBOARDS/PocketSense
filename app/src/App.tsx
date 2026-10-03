@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StateView } from './components/common';
+import { LogPanel } from './components/LogPanel';
+import { ParkForm } from './components/ParkForm';
+import { PastePark } from './components/PastePark';
+import { ReadyBanner } from './components/ReadyBanner';
+import { HalfBar, Sidebar } from './components/Shell';
+import { useLayout } from './layout';
+import { parkingStats } from './lib/derive';
 import { Chart, House, List, MessageCircle, Plus } from './components/icons';
 import { AccountContext, useAccountController } from './lib/account';
 import { setCurrency } from './lib/format';
@@ -18,11 +25,12 @@ import { GoalSetup, Onboarding } from './screens/Onboarding';
 import { ParentApprove } from './screens/ParentApprove';
 import { Parking } from './screens/Parking';
 import { Thinking } from './screens/Thinking';
+import { History } from './screens/History';
 import { Transactions } from './screens/Transactions';
 import { QuickLog } from './sheets/QuickLog';
 import { SignOutSheet } from './sheets/SignOut';
 import { WhySheet } from './sheets/WhySheet';
-import { UiContext, type LogPrefill, type ParkPrefill, type Screen, type Ui } from './ui';
+import { UiContext, useUi, type LogPrefill, type ParkPrefill, type Screen, type Ui } from './ui';
 
 /** Show pattern names ("Impulse spike", "Leak", "Saver streak") above the plain sentences. */
 const SHOW_PATTERN_NAMES = true;
@@ -64,6 +72,7 @@ export function App() {
   /** Currency picked during setup, before there are settings to keep it in. */
   const [setupCurrency, setSetupCurrency] = useState<Currency>('IDR');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const layout = useLayout();
   const toastTimer = useRef<number>(undefined);
   const screenRef = useRef(screen);
   screenRef.current = screen;
@@ -126,7 +135,7 @@ export function App() {
   const { setPrefs } = store.actions;
   const hasData = !!store.data;
   const ui = useMemo<Ui>(() => ({
-    now, screen, go, toast, photo, lang,
+    now, screen, go, toast, photo, lang, layout,
     openLog: prefill => setLog({ prefill }),
     openWhy: id => setWhyId(id),
     think: prefill => { setParkPrefill(prefill ?? null); go('thinking'); },
@@ -143,7 +152,7 @@ export function App() {
       setLocalLang(l);
       if (hasData) setPrefs({ lang: l });
     },
-  }), [now, screen, go, toast, photo, lang, hasData, setPrefs]);
+  }), [now, screen, go, toast, photo, lang, layout, hasData, setPrefs]);
 
   // A link shared from a shop app opens "Thinking of buying" once the app has data to work with.
   useEffect(() => {
@@ -194,37 +203,95 @@ export function App() {
     );
   }
 
+  const wide = layout !== 'phone';
+  // On bigger windows History takes Home's place, and in a full window "Thinking of buying"
+  // lives in the Parking lot's side panel.
+  const view: Screen = wide && screen === 'home' ? 'transactions' : layout === 'full' && screen === 'thinking' ? 'parking' : screen;
+  // Pages made for the phone keep a readable width on a big window.
+  const narrow = wide && !['transactions', 'insights', 'ask', 'goals', 'parking', 'settings'].includes(view);
+
+  const screens = (
+    <div className={narrow ? 'narrow' : undefined} style={narrow && layout === 'full' ? { margin: '0 auto' } : undefined}>
+      {view === 'home' && <Home />}
+      {view === 'transactions' && (wide ? <History /> : <Transactions />)}
+      {view === 'insights' && <Insights patternNames={SHOW_PATTERN_NAMES} />}
+      {view === 'ask' && <Ask />}
+      {view === 'ask-about' && <AskAbout onBack={() => back('ask-about')} />}
+      {view === 'goals' && <Goal />}
+      {view === 'thinking' && <Thinking key={JSON.stringify(parkPrefill)} prefill={parkPrefill ?? undefined} />}
+      {view === 'parking' && <Parking />}
+      {view === 'lookback' && <Lookback />}
+      {view === 'goal-setup' && data && (
+        <GoalSetup initial={data.goal} onCancel={() => go('goals')}
+          onSave={g => { store.actions.setGoal(g); go('goals'); toast(tr('Goal saved.', 'Target disimpan.')); }} />
+      )}
+      {view === 'settings' && <Settings onSignOut={() => setSignOutOpen(true)} />}
+      {view === 'privacy' && <Privacy onBack={() => back('privacy')} />}
+      {accountScreen && <>
+        {view === 'signin' && <SignIn email={authEmail} setEmail={setAuthEmail} form={authForm} setForm={setAuthForm} onBack={() => back('signin')} />}
+        {view === 'forgot' && <Forgot email={authEmail} setEmail={setAuthEmail} />}
+        {view === 'verify' && <Verify email={authEmail} />}
+        {view === 'new-password' && <NewPassword />}
+        {view === 'consent' && <Consent />}
+        {view === 'upload' && <Upload />}
+        {view === 'restore' && <Restore />}
+        {view === 'delete' && <DeleteAccount />}
+      </>}
+    </div>
+  );
+  const layers = <>
+    {log && <QuickLog prefill={log.prefill} onClose={() => setLog(null)} />}
+    {whyId && <WhySheet purchaseId={whyId} onClose={() => setWhyId(null)} />}
+    {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
+  </>;
+  const scroll = <div className="scroll" ref={scrollRef}>{screens}</div>;
+  // Sign-in and the steps after it fill the window on their own, without tabs or a sidebar.
+  const bare = ACCOUNT_SCREENS.includes(view);
+
+  if (layout === 'half') {
+    return wrap(
+      <div className="app wide half" data-screen-label={view}>
+        {!bare && <HalfBar screen={view} />}
+        {scroll}
+        {toastEl(16)}
+        {layers}
+      </div>,
+    );
+  }
+
+  if (layout === 'full') {
+    const panel = !bare && view !== 'settings';
+    const poster = bare && view === 'signin';
+    return wrap(
+      <div className={`app wide full${bare ? ' bare' : panel ? '' : ' no-aside'}${poster ? ' poster' : ''}`} data-screen-label={view}>
+        {!bare && <Sidebar screen={view} />}
+        {poster && <PosterSide />}
+        <main className="main-col">{scroll}</main>
+        {panel && data && (
+          <aside className="side-panel" aria-label={tr('Quick actions', 'Aksi cepat')}>
+            {view === 'parking' ? <>
+              <div style={{ padding: '20px 24px 0' }}><PastePark title /></div>
+              <ParkForm key={JSON.stringify(parkPrefill)} prefill={parkPrefill ?? undefined} panel onDone={() => setParkPrefill(null)} />
+            </> : <>
+              <LogPanel variant="panel" />
+              <div className="rule" />
+              <div style={{ padding: '20px 24px' }}><PastePark title note /></div>
+              <div className="grow" />
+              <FirstReady />
+            </>}
+          </aside>
+        )}
+        {toastEl(16)}
+        {layers}
+      </div>,
+    );
+  }
+
   const showNav = TABS.includes(screen) && !!data;
 
   return wrap(
     <div className="app" data-screen-label={screen}>
-      <div className="scroll" ref={scrollRef}>
-        {screen === 'home' && <Home />}
-        {screen === 'transactions' && <Transactions />}
-        {screen === 'insights' && <Insights patternNames={SHOW_PATTERN_NAMES} />}
-        {screen === 'ask' && <Ask />}
-        {screen === 'ask-about' && <AskAbout onBack={() => back('ask-about')} />}
-        {screen === 'goals' && <Goal />}
-        {screen === 'thinking' && <Thinking key={JSON.stringify(parkPrefill)} prefill={parkPrefill ?? undefined} />}
-        {screen === 'parking' && <Parking />}
-        {screen === 'lookback' && <Lookback />}
-        {screen === 'goal-setup' && data && (
-          <GoalSetup initial={data.goal} onCancel={() => go('goals')}
-            onSave={g => { store.actions.setGoal(g); go('goals'); toast(tr('Goal saved.', 'Target disimpan.')); }} />
-        )}
-        {screen === 'settings' && <Settings onSignOut={() => setSignOutOpen(true)} />}
-        {screen === 'privacy' && <Privacy onBack={() => back('privacy')} />}
-        {accountScreen && <>
-          {screen === 'signin' && <SignIn email={authEmail} setEmail={setAuthEmail} form={authForm} setForm={setAuthForm} onBack={() => back('signin')} />}
-          {screen === 'forgot' && <Forgot email={authEmail} setEmail={setAuthEmail} />}
-          {screen === 'verify' && <Verify email={authEmail} />}
-          {screen === 'new-password' && <NewPassword />}
-          {screen === 'consent' && <Consent />}
-          {screen === 'upload' && <Upload />}
-          {screen === 'restore' && <Restore />}
-          {screen === 'delete' && <DeleteAccount />}
-        </>}
-      </div>
+      {scroll}
 
       {showNav && (
         <nav aria-label={tr('Main', 'Utama')} className="nav-bar">
@@ -239,10 +306,31 @@ export function App() {
       )}
 
       {toastEl(showNav ? 80 : 16)}
-      {log && <QuickLog prefill={log.prefill} onClose={() => setLog(null)} />}
-      {whyId && <WhySheet purchaseId={whyId} onClose={() => setWhyId(null)} />}
-      {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
+      {layers}
     </div>,
+  );
+}
+
+/** The red "Wait's over" block at the bottom of the desktop side panel, for the item that's waited longest. */
+function FirstReady() {
+  const { data } = useStore();
+  const { now } = useUi();
+  const first = data ? parkingStats(data, now).ready[0] : undefined;
+  return first ? <ReadyBanner k={first} variant="panel" showSrc={false} /> : null;
+}
+
+/** The red half of the full-window sign-in page. */
+function PosterSide() {
+  return (
+    <div className="poster-side">
+      <div className="t20 w8">Pocket Sense</div>
+      <div className="grow" />
+      <div className="poster-title">{tr('Use Pocket Sense on your PC too.', 'Pakai Pocket Sense di PC juga.')}</div>
+      <div className="pretty" style={{ fontSize: 18, lineHeight: 1.5, maxWidth: 480 }}>
+        {tr('Same purchases, parking lot and goal on your phone and computer. Optional: without an account, everything stays on your phone.',
+          'Pembelian, parkiran, dan target yang sama di HP dan komputer. Opsional: tanpa akun, semua tetap di HP kamu.')}
+      </div>
+    </div>
   );
 }
 

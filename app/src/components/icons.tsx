@@ -47,3 +47,5 @@ export const LinkIcon = ({ size = 16 }: { size?: number }) => (
 );
 export const Info = () => <Icon size={16}><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></Icon>;
 export const Send = () => <Icon><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></Icon>;
+export const Timer = () => <Icon><line x1="10" x2="14" y1="2" y2="2" /><line x1="12" x2="15" y1="14" y2="11" /><circle cx="12" cy="14" r="8" /></Icon>;
+export const Search = () => <Icon size={18}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></Icon>;

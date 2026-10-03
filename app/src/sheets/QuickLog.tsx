@@ -146,13 +146,14 @@ export function QuickLog({ prefill, onClose }: { prefill?: LogPrefill; onClose: 
   );
 }
 
-function RepeatChips({ onPick }: { onPick: (name: string, cat: CatId, amt: number) => void }) {
+/** "Repeat · Kopi susu Rp 18.000" for buys that happen often. `wrap` lays them out in rows instead of one scrolling line. */
+export function RepeatChips({ onPick, wrap }: { onPick: (name: string, cat: CatId, amt: number) => void; wrap?: boolean }) {
   const { data } = useData();
   const { now } = useUi();
   const chips = repeatCandidates(data, now);
   if (!chips.length) return null;
   return (
-    <div className="hscroll" style={{ padding: '0 20px 12px' }}>
+    <div className={wrap ? 'wrap-row' : 'hscroll'} style={wrap ? undefined : { padding: '0 20px 12px' }}>
       {chips.map(r => (
         <button key={`${r.name}|${r.amt}`} className="repeat-chip" onClick={() => onPick(r.name, r.cat, r.amt)}>
           {tr('Repeat', 'Ulangi')} · {purchaseName(r)} {money(r.amt)}
@@ -162,7 +163,7 @@ function RepeatChips({ onPick }: { onPick: (name: string, cat: CatId, amt: numbe
   );
 }
 
-function SavedPurchase({ id, weightLine, onWhy, onDone }: { id: string; weightLine: string; onWhy: () => void; onDone: () => void }) {
+export function SavedPurchase({ id, weightLine, onWhy, onDone }: { id: string; weightLine: string; onWhy: () => void; onDone: () => void }) {
   const { data, actions } = useData();
   const p = data.purchases.find(x => x.id === id)!;
   const cls = classifier(data)(p).cls;
