@@ -37,3 +37,13 @@ export const Gear = () => (
 );
 export const ChevronRight = () => <Icon size={20}><path d="m9 18 6-6-6-6" /></Icon>;
 export const XSmall = () => <Icon size={20}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></Icon>;
+export const MessageCircle = () => <Icon><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></Icon>;
+export const ChevronDown = () => <Icon size={20}><path d="m6 9 6 6 6-6" /></Icon>;
+export const LinkIcon = ({ size = 16 }: { size?: number }) => (
+  <Icon size={size}>
+    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+  </Icon>
+);
+export const Info = () => <Icon size={16}><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></Icon>;
+export const Send = () => <Icon><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></Icon>;

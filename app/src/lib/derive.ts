@@ -1,7 +1,8 @@
 import { classify, type Classification } from './classify';
 import { LOOKBACK_DAYS } from './constants';
 import { addDays, dayOfWeek, daysBetween, dayMonth, endOfWeek, startOfMonth, startOfWeek } from './dates';
-import { money0 } from './format';
+import { money0, plural } from './format';
+import { tr } from './i18n';
 import type { CatId, Data, Parked, Purchase } from './types';
 
 const inRange = (t: number, from: number, to: number) => t >= from && t < to;
@@ -42,11 +43,17 @@ export function goalStats(data: Data, now: number) {
   const weeklySave = recent / 4;
   const reached = !!goal && saved >= target;
   let eta: string;
+  const weeksLeft = weeklySave > 0 ? Math.ceil((target - saved) / weeklySave) : 0;
   if (!goal) eta = '';
-  else if (reached) eta = 'Reached';
-  else if (weeklySave <= 0) eta = 'No end date yet. Add money to see one.';
-  else eta = `About ${dayMonth(addDays(now, Math.ceil(((target - saved) / weeklySave) * 7)))}`;
-  return { goal, saved, target, pct, weeklySave, reached, eta, hasRate: weeklySave > 0 };
+  else if (reached) eta = tr('Reached', 'Tercapai');
+  else if (weeklySave <= 0) eta = tr('No end date yet. Add money to see one.', 'Belum ada perkiraan. Tambah uang untuk melihatnya.');
+  else eta = tr(`About ${dayMonth(addDays(now, Math.ceil(((target - saved) / weeklySave) * 7)))}`,
+    `Sekitar ${dayMonth(addDays(now, Math.ceil(((target - saved) / weeklySave) * 7)))}`);
+  /** "About 6 weeks to go", the short line on Home. */
+  const etaShort = !goal || reached || weeklySave <= 0 ? eta
+    : weeksLeft <= 1 ? tr('About a week to go', 'Sekitar seminggu lagi')
+    : tr(`About ${weeksLeft} weeks to go`, `Sekitar ${weeksLeft} minggu lagi`);
+  return { goal, saved, target, pct, weeklySave, reached, eta, etaShort, hasRate: weeklySave > 0 };
 }
 
 export function parkingStats(data: Data, now: number) {
@@ -57,9 +64,13 @@ export function parkingStats(data: Data, now: number) {
     .sort((a, b) => b.decidedAt - a.decidedAt);
   const skipped = decided.filter(k => k.outcome === 'skipped');
   const kept = skipped.reduce((a, k) => a + k.price, 0);
-  const saverLine = decided.length
-    ? `You skipped ${skipped.length} of ${decided.length} parked items this month and kept ${money0(kept)}.`
-    : 'Nothing decided yet this month.';
+  const saverLine = !decided.length
+    ? tr('Nothing decided yet this month.', 'Belum ada yang diputuskan bulan ini.')
+    : skipped.length === decided.length
+      ? tr(`You skipped ${plural(skipped.length, 'thing')} this month and kept ${money0(kept)}.`,
+        `Bulan ini kamu melewatkan ${skipped.length} barang dan menyimpan ${money0(kept)}.`)
+      : tr(`You skipped ${skipped.length} of ${decided.length} parked items this month and kept ${money0(kept)}.`,
+        `Bulan ini kamu melewatkan ${skipped.length} dari ${decided.length} barang yang diparkir dan menyimpan ${money0(kept)}.`);
   return {
     ready: pending.filter(k => k.endsAt <= now).sort((a, b) => a.endsAt - b.endsAt),
     waiting: pending.filter(k => k.endsAt > now).sort((a, b) => a.endsAt - b.endsAt),

@@ -10,7 +10,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { shortDate } from './dates';
 import { loadJson, saveJson } from './storage';
 import type { useStore } from './store';
-import { authMessage, isFresh, isValidData, merge, syncView, type AccountStatus, type SyncView } from './sync';
+import { tr } from './i18n';
+import { normalize } from './migrate';
+import { authMessage, isFresh, isValidData, merge, offlineMsg, syncView, type AccountStatus, type SyncView } from './sync';
 import type { Data } from './types';
 import { supabase, urlAuth } from './supabase';
 import type { Screen } from '../ui';
@@ -103,13 +105,13 @@ const isNetworkError = (e: unknown) => {
 };
 
 /** Reads { error } from an Edge Function's reply, which supabase-js hides inside the error. */
-async function functionError(error: unknown): Promise<string> {
+export async function functionError(error: unknown): Promise<string> {
   const res = (error as { context?: Response })?.context;
   if (res && typeof res.json === 'function') {
     const body = await res.json().catch(() => null);
     if (body?.error) return body.error;
   }
-  return isNetworkError(error) ? "Can't reach the server. Check your connection." : 'Something went wrong. Try again.';
+  return isNetworkError(error) ? offlineMsg() : tr('Something went wrong. Try again.', 'Ada yang salah. Coba lagi.');
 }
 
 export function useAccountController(store: Store, go: (s: Screen) => void, toast: (m: string) => void, clearPhoto: () => void): AccountValue {
@@ -167,8 +169,11 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
     const { data, error } = await supabase!.from('user_data').select('data, rev').maybeSingle();
     if (error) throw error;
     if (!data) return null;
-    if (!isValidData(data.data)) throw new Error('The data in your account is from a newer version of the app. Update Pocket Sense and try again.');
-    return data as { data: Data; rev: number };
+    if (!isValidData(data.data)) {
+      throw new Error(tr('The data in your account is from a newer version of the app. Update Pocket Sense and try again.',
+        'Data di akunmu dari versi aplikasi yang lebih baru. Perbarui Pocket Sense lalu coba lagi.'));
+    }
+    return { data: normalize(data.data), rev: data.rev as number };
   }, []);
 
   /** Saves `data` on top of server version `base`. If someone saved in between, merges and tries again. */
@@ -184,7 +189,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       store.replace(data);
       base = row.rev;
     }
-    throw new Error('Your data kept changing on another device. Try again.');
+    throw new Error(tr('Your data kept changing on another device. Try again.', 'Datamu terus berubah di perangkat lain. Coba lagi.'));
   }, [fetchRow]);
 
   /** Background sync for a linked phone: take the account's changes, then send this phone's. */
@@ -263,7 +268,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       setLocal({ wiped: false, linking: false, birthYear: null, deletionAt: null, ownerId: id });
       setLink({ progress: 100, dir, done: true, error: null });
     } catch (e) {
-      const msg = e instanceof Error && !isNetworkError(e) ? e.message : "Can't reach the server. Check your connection and try again.";
+      const msg = e instanceof Error && !isNetworkError(e) ? e.message : offlineMsg();
       setLink(l => ({ progress: l?.progress ?? 0, dir, done: false, error: msg }));
     } finally {
       clearInterval(timer);
@@ -291,7 +296,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
     try {
       p = await fetchProfile();
     } catch (e) {
-      if (interactive) toast(isNetworkError(e) ? "Can't reach the server. Check your connection." : "Couldn't load your account. Try again.");
+      if (interactive) toast(isNetworkError(e) ? offlineMsg() : tr("Couldn't load your account. Try again.", 'Akunmu tidak bisa dimuat. Coba lagi.'));
       return;
     }
     if (!p) return;
@@ -302,7 +307,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
         // Deleted on another device: this phone follows.
         await supabase!.auth.signOut({ scope: 'local' });
         clearPhone({ deletionAt: p.deletion_at });
-        toast('This account is set to be deleted. This phone is cleared.');
+        toast(tr('This account is set to be deleted. This phone is cleared.', 'Akun ini dijadwalkan untuk dihapus. HP ini sudah dikosongkan.'));
       }
       return;
     }
@@ -324,13 +329,13 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       if (interactive) {
         setLocal({ linking: false, birthYear: null });
         if (!p.parent_email) go('consent');
-        else { go('home'); toast('Waiting for a parent to approve. Your data stays on this phone.'); }
+        else { go('home'); toast(tr('Waiting for a parent to approve. Your data stays on this phone.', 'Menunggu persetujuan orang tua. Datamu tetap di HP ini.')); }
       }
       return;
     }
 
     if (interactive || !isLinked()) {
-      if (!interactive && p.minor) toast('A parent approved. Copying this phone to your account.');
+      if (!interactive && p.minor) toast(tr('A parent approved. Copying this phone to your account.', 'Orang tua sudah setuju. Menyalin HP ini ke akunmu.'));
       await startLink();
     } else {
       await syncNow();
@@ -370,7 +375,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
   // A sign-in link that failed (expired or already used) comes back with an error in the URL.
   useEffect(() => {
     if (!supabase || !urlAuth.error) return;
-    deps.current.toast(`That link didn't work: ${urlAuth.error}. Try again.`);
+    deps.current.toast(tr(`That link didn't work: ${urlAuth.error}. Try again.`, `Link itu tidak berfungsi: ${urlAuth.error}. Coba lagi.`));
     history.replaceState(history.state, '', window.location.pathname + window.location.search);
     setLocal({ linking: false });
   }, [setLocal]);
@@ -485,7 +490,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       setNewPassword: async password => {
         const { error } = await sb.auth.updateUser({ password });
         if (error) return authMessage(error);
-        deps.current.toast('Password changed.');
+        deps.current.toast(tr('Password changed.', 'Kata sandi sudah diganti.'));
         await afterSignIn(true);
         return null;
       },
@@ -499,12 +504,12 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
         setLocal({ linking: false, birthYear: null });
         await sb.auth.signOut({ scope: 'local' });
         deps.current.go('home');
-        deps.current.toast('Saved on this phone only. You can sign in later from Settings.');
+        deps.current.toast(tr('Saved on this phone only. You can sign in later from Settings.', 'Disimpan di HP ini saja. Kamu bisa masuk nanti dari Pengaturan.'));
       },
       signOut: async () => {
         await sb.auth.signOut({ scope: 'local' });
         clearPhone();
-        deps.current.toast('Signed out. This phone is cleared.');
+        deps.current.toast(tr('Signed out. This phone is cleared.', 'Sudah keluar. HP ini sudah dikosongkan.'));
       },
       deleteAccount: async () => {
         const { data, error } = await sb.functions.invoke('delete-account', { body: {} });
@@ -512,14 +517,14 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
         const at = (data as { deletionAt: string }).deletionAt;
         await sb.auth.signOut({ scope: 'local' });
         clearPhone({ deletionAt: at });
-        deps.current.toast(`Account set to be deleted on ${formatDay(at)}.`);
+        deps.current.toast(tr(`Account set to be deleted on ${formatDay(at)}.`, `Akun dijadwalkan dihapus pada ${formatDay(at)}.`));
         return null;
       },
       restore: async () => {
         const { error } = await sb.rpc('cancel_deletion');
         if (error) return authMessage(error);
         setLocal({ deletionAt: null });
-        deps.current.toast('Deletion cancelled. Welcome back.');
+        deps.current.toast(tr('Deletion cancelled. Welcome back.', 'Penghapusan dibatalkan. Selamat datang kembali.'));
         await afterSignIn(true);
         return null;
       },
@@ -528,7 +533,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
         setLocal({ deletionAt: at, linking: false });
         await sb.auth.signOut({ scope: 'local' });
         deps.current.go('home');
-        deps.current.toast(`Still scheduled for ${formatDay(at)}.`);
+        deps.current.toast(tr(`Still scheduled for ${formatDay(at)}.`, `Tetap dijadwalkan pada ${formatDay(at)}.`));
       },
       retryLink: () => void startLink(),
     };

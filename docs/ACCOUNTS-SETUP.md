@@ -5,7 +5,7 @@ Pocket Sense works without any of this. With no Supabase settings, the app hides
 ## Already done
 
 - A Supabase project called **Pocket Sense** (free plan, Singapore).
-- The database: all three files in [`supabase/migrations/`](../supabase/migrations/) are applied, including the daily job that erases deleted accounts.
+- The database: the first three files in [`supabase/migrations/`](../supabase/migrations/) are applied, including the daily job that erases deleted accounts. The fourth (`…_ask_usage.sql`, for Ask) is new in V1: see step 6.
 - The three email functions (`request-consent`, `approve-consent`, `delete-account`) are deployed.
 - [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml) builds the app from the GitHub secrets and publishes it to GitHub Pages on every push to `main`.
 
@@ -16,6 +16,7 @@ Pocket Sense works without any of this. With no Supabase settings, the app hides
 | Project URL (`https://<ref>.supabase.co`) | No | GitHub secret `VITE_SUPABASE_URL`, or your own `app/.env.local` |
 | Publishable key (`sb_publishable_…`) | No, it's made to be public | GitHub secret `VITE_SUPABASE_PUBLISHABLE_KEY`, or your own `app/.env.local` |
 | Resend API key (`re_…`) | **Yes** | Supabase → Edge Functions → Secrets only |
+| OpenRouter API key (`sk-or-…`) | **Yes** | Supabase → Edge Functions → Secrets only. Never in `app/.env.local` or a `VITE_` variable: those end up in the public JavaScript. |
 | `service_role` / secret key | **Yes, the most dangerous one** | Nowhere. Supabase gives it to the functions automatically. Never put it in the app, GitHub or chat. |
 
 Both app values end up inside the built JavaScript that every visitor downloads. That's normal: the database rules (RLS and the checked functions) are what protect the data, not these keys. They're kept in GitHub secrets so they aren't copied into the code.
@@ -62,6 +63,22 @@ Two limits while testing:
 
 In [Google Cloud Console](https://console.cloud.google.com) create an OAuth client (Web application) with the redirect URI shown on Supabase → Authentication → Providers → Google, then paste the client ID and secret there. Until you do, the Google button shows an error; email sign-in works.
 
+### 6. Turn on Ask (AI answers)
+
+Ask sends a question plus a summary of what the user logged to an AI model through [OpenRouter](https://openrouter.ai). It only works for signed-in users (and under-18 users only after a parent approves).
+
+1. Apply [`supabase/migrations/20261002000000_ask_usage.sql`](../supabase/migrations/20261002000000_ask_usage.sql) (the daily limit of 30 questions per user) and deploy the `ask` function: `npx supabase db push` and `npx supabase functions deploy ask`, or ask Claude to do it through the Supabase MCP.
+2. On openrouter.ai: **Keys → Create key**. Give it a **credit limit** (for example $2) so a bug can't run up a bill. Copy it.
+3. On openrouter.ai → **Settings → Privacy**: turn off any option that lets providers train on or log your prompts. Your users' spending goes through here.
+4. Pick a model on [openrouter.ai/models](https://openrouter.ai/models). A small, cheap one is enough, for example a Claude Haiku or Gemini Flash model. Copy its exact name (it looks like `provider/model-name`).
+5. Supabase → **Edge Functions → Secrets**, add:
+   - `OPENROUTER_API_KEY`: the key from step 2
+   - `OPENROUTER_MODEL`: the model name from step 4
+
+Check the model provider's terms before real users try it. Some AI APIs don't allow apps that people under 18 are likely to use, and Pocket Sense is for students.
+
+Until both secrets are set, Ask shows "Ask couldn't answer right now" and nothing is sent anywhere.
+
 ## Test on your computer instead
 
 Copy `app/.env.example` to `app/.env.local`, fill in the two values from step 1, then `cd app && npm run dev`. `.env.local` is ignored by git.
@@ -74,6 +91,7 @@ Copy `app/.env.example` to `app/.env.local`, fill in the two values from step 1,
 - [ ] Turn off Wi-Fi and log something: "Offline · 1 change waiting". Turn it back on: "Synced".
 - [ ] Create a second account with a birth year under 18 and use **your own email** as the parent: you get the approval email, approve it, reopen the app, and it copies the data.
 - [ ] Settings → Delete account → sign in again → "Keep your account?" → Restore.
+- [ ] Ask tab, signed in: "Can I afford Rp 189.000 earbuds?" gives an answer card with "Left this week" and "After buying". Supabase → Table Editor → `ask_usage` shows a count of 1 for today.
 
 ## Changing the database later
 

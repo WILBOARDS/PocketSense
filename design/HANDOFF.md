@@ -1,5 +1,7 @@
 # CODING AGENTS: READ THIS FIRST
 
+> **Update (V1):** the latest design is `project/Pocket Sense V1.dc.html` (mobile, half screen and full window, EN / ID, Rupiah). `project/github.md` maps its screens to the app's files. The original `Pocket Sense.dc.html` below is kept for history.
+
 This is a **handoff bundle** from Claude Design (claude.ai/design).
 
 A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.

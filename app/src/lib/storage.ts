@@ -1,3 +1,4 @@
+import { normalize } from './migrate';
 import type { Data } from './types';
 
 const KEY = 'pocket-sense:data';
@@ -12,7 +13,7 @@ export function load(): LoadResult {
     if (!raw) return { ok: true, data: null };
     const data = JSON.parse(raw) as Data;
     if (data?.version !== 1 || !Array.isArray(data.purchases)) return { ok: false };
-    return { ok: true, data };
+    return { ok: true, data: normalize(data) };
   } catch {
     return { ok: false };
   }

@@ -1,5 +1,5 @@
 import type { RowData } from '../components/common';
-import { catShort } from '../lib/constants';
+import { moodLabel, purchaseName, wordLabel } from '../lib/constants';
 import { clock } from '../lib/dates';
 import { classifier } from '../lib/derive';
 import { money } from '../lib/format';
@@ -9,9 +9,9 @@ export function toRows(data: Data, purchases: Purchase[]): RowData[] {
   const cls = classifier(data);
   return purchases.map(p => ({
     id: p.id,
-    name: p.name,
+    name: purchaseName(p),
     amtStr: money(p.amt),
-    meta: [catShort(p.cat), p.wallet, clock(p.at), p.mood].filter(Boolean).join(' · '),
+    meta: [clock(p.at), wordLabel(p.wallet), p.mood && moodLabel(p.mood)].filter(Boolean).join(' · '),
     cls: cls(p).cls,
   }));
 }

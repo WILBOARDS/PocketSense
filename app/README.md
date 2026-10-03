@@ -1,7 +1,9 @@
 # Pocket Sense
 
 A phone-first spending app for students. It's built from the Claude Design handoff in `../design/project/Pocket Sense.dc.html`.
-It's a React + TypeScript web app you can install to a phone's home screen (PWA). All data stays on the device.
+It's a React + TypeScript web app you can install to a phone's home screen (PWA). All data stays on the device unless you sign in.
+
+**V1** (`../design/project/Pocket Sense V1.dc.html`) adds English / Indonesian, Rupiah, a category dropdown with your own categories, Indonesian e-wallets, sharing a product from a shop app into the parking lot, parking-lot filters, and **Ask**, AI answers about your own logged money. The half-screen and full-window desktop layouts from the same design come in a follow-up.
 
 ## Run it
 
@@ -26,8 +28,13 @@ How sync works: the account keeps one copy of the app data with a version number
 
 | Path | What it is |
 | --- | --- |
-| `src/App.tsx` | Screen switching, bottom nav, sheets, toast, back-button handling |
-| `src/screens/` | One file per screen: Home, Transactions, Insights, Goal, Thinking, Parking, Lookback, Onboarding (+ GoalSetup) |
+| `src/App.tsx` | Screen switching, bottom nav, sheets, toast, back-button handling, language and currency, shared links |
+| `src/screens/` | One file per screen: Home, Transactions (Spending), Insights (Week), Ask, Goal, Thinking (Park it), Parking, Lookback, Onboarding (+ GoalSetup) |
+| `src/lib/i18n.ts` | English / Indonesian. Strings are written in place as `tr('English', 'Indonesia')` |
+| `src/lib/format.ts` | Money in Rupiah or dollars, and amount fields |
+| `src/lib/share.ts` | Reads a product name, price and shop from a shared or pasted link |
+| `src/lib/ask.ts` | What Ask sends to the AI (a summary, no account details) and checks the answer |
+| `../supabase/functions/ask/` | The server side of Ask: checks the user, counts questions, calls the AI through OpenRouter |
 | `src/sheets/` | Quick log and "Why?" bottom sheets |
 | `src/lib/classify.ts` | Need / Useful / Want / Invest scoring and its reasons |
 | `src/lib/insights.ts` | Pattern cards and stats. The formulas are documented at the top |
@@ -42,6 +49,20 @@ How sync works: the account keeps one copy of the app data with a version number
 | `src/styles/app.css` | App layout and shared patterns built on the design tokens |
 
 ## Differences from the prototype
+
+V1:
+
+- **Currency is a choice** (Rupiah or dollars) in setup and Settings. New users start on Rupiah. Data saved before V1 stays in dollars so its numbers don't change meaning. Switching currency only changes the symbol; it doesn't convert amounts.
+- **Settings work without an account** and you can change weekly money, the cooldown line and the currency there. The design showed them as fixed values.
+- **The first setup screen has an EN / ID switch**, because Settings isn't reachable until setup is done.
+- **Birth year stays on Create account** (the design removed it) because it decides whether a parent has to approve before anything syncs or goes to Ask. The "What gets stored" box is gone, as in the design.
+- **Ask needs an account** and a parent's approval for under-18s, since the question and a summary of your spending leave the phone. "Left this week" and "After buying" on the answer card are worked out by the app, not by the AI. Limit: 30 questions a day.
+- **"Read the documentation"** under Ask opens an in-app page explaining what Ask sees and where it goes.
+- **Sharing from a shop app** only works once Pocket Sense is installed to the home screen on Android (Chrome's Share target). iPhones don't support it. The name and price come from the text the shop app shares; shop pages can't be read from the browser, so you check them before parking.
+- **Pattern sentences** (Week) keep the real formulas from before; the design's "after 9pm" wording was sample copy.
+- **Goal** moved off the bottom bar (Ask took its place). Tap the goal on Home to open it.
+
+Before V1:
 
 - **Weekly money is asked in onboarding** (step 1). The prototype hard-coded $120. Income logged in Quick log adds to the current week only.
 - **Insights use real formulas.** The prototype's numbers were fixed samples. Pattern cards appear after 2 weeks of data. The two stats need at least 3 data points before they show a value.
