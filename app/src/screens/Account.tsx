@@ -51,7 +51,7 @@ const body15 = 't15 pretty';
 export function Settings({ onSignOut }: { onSignOut: () => void }) {
   const acc = useAccount();
   const { data, actions } = useData();
-  const { go, toast } = useUi();
+  const { go, toast, layout } = useUi();
   const [sending, setSending] = useState(false);
   const [editing, setEditing] = useState<'week' | 'cooldown' | 'currency' | null>(null);
   const [weekStr, setWeekStr] = useState('');
@@ -76,9 +76,14 @@ export function Settings({ onSignOut }: { onSignOut: () => void }) {
     toast(tr('Weekly money updated.', 'Uang mingguan diperbarui.'));
   };
 
+  const wide = layout !== 'phone';
   return (
     <div className="screen">
-      <BackBar title={tr('Settings', 'Pengaturan')} onBack={() => go('home')} />
+      {wide
+        ? <div style={{ padding: layout === 'full' ? '20px 28px 4px' : '16px 20px 4px' }}><span className={layout === 'full' ? 'wide-title' : 'page-title'}>{tr('Settings', 'Pengaturan')}</span></div>
+        : <BackBar title={tr('Settings', 'Pengaturan')} onBack={() => go('home')} />}
+      <div className={wide ? 'settings-cols' : undefined}>
+      <div>
       <Section>{tr('Preferences', 'Preferensi')}</Section>
       <div className="kv-row" style={{ alignItems: 'center', padding: '10px 20px' }}>
         <span className="muted">{tr('Language', 'Bahasa')}</span>
@@ -125,8 +130,10 @@ export function Settings({ onSignOut }: { onSignOut: () => void }) {
             'Ini ikut ke PC kamu, bersama target, timer jeda, dan label yang dipelajari dari tinjauan ulang.')
           : tr('Saved on this phone.', 'Disimpan di HP ini.')}
       </div>
-      <div className="rule" />
+      </div>
+      {!wide && <div className="rule" />}
 
+      <div>
       <div className="t16 w8" style={{ padding: '20px 20px 8px' }}>{tr('Privacy', 'Privasi')}</div>
       <div className="t14 muted pretty" style={{ padding: '0 20px 12px', lineHeight: 1.5 }}>
         {acc.enabled
@@ -137,9 +144,11 @@ export function Settings({ onSignOut }: { onSignOut: () => void }) {
       <ListButton onClick={() => go('privacy')}>{tr('Privacy policy', 'Kebijakan privasi')}</ListButton>
       {acc.enabled && acc.status !== 'out' && <ListButton danger onClick={() => go('delete')}>{tr('Delete account', 'Hapus akun')}</ListButton>}
       <div style={{ borderTop: '1px solid var(--color-neutral-300)' }} />
+      </div>
+      </div>
 
-      {acc.enabled && <>
-        <div className="rule" style={{ marginTop: 8 }} />
+      {acc.enabled && <div className={wide ? 'narrow' : undefined}>
+        {!wide && <div className="rule" style={{ marginTop: 8 }} />}
         <Section>{tr('Account', 'Akun')}</Section>
         {acc.status === 'out' && (
           <div style={{ padding: '0 20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -175,10 +184,10 @@ export function Settings({ onSignOut }: { onSignOut: () => void }) {
             </span>
           </div>
           <div style={{ padding: '16px 20px 24px', borderTop: '1px solid var(--color-neutral-300)' }}>
-            <button className="danger-btn" onClick={onSignOut}>{tr('Sign out', 'Keluar')}</button>
+            <button className="danger-btn" style={wide ? { maxWidth: 320 } : undefined} onClick={onSignOut}>{tr('Sign out', 'Keluar')}</button>
           </div>
         </>}
-      </>}
+      </div>}
       <div style={{ height: 24 }} />
     </div>
   );

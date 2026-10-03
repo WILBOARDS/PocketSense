@@ -3,7 +3,7 @@
 A phone-first spending app for students. It's built from the Claude Design handoff in `../design/project/Pocket Sense.dc.html`.
 It's a React + TypeScript web app you can install to a phone's home screen (PWA). All data stays on the device unless you sign in.
 
-**V1** (`../design/project/Pocket Sense V1.dc.html`) adds English / Indonesian, Rupiah, a category dropdown with your own categories, Indonesian e-wallets, sharing a product from a shop app into the parking lot, parking-lot filters, and **Ask**, AI answers about your own logged money. The half-screen and full-window desktop layouts from the same design come in a follow-up.
+**V1** (`../design/project/Pocket Sense V1.dc.html`) adds English / Indonesian, Rupiah, a category dropdown with your own categories, Indonesian e-wallets, sharing a product from a shop app into the parking lot, parking-lot filters, and **Ask**, AI answers about your own logged money. It also lays out for bigger windows: half screen (600–1023px, tabs on top) and full window (1024px and up, sidebar plus a side panel for logging and parking from a link).
 
 ## Run it
 
@@ -28,7 +28,11 @@ How sync works: the account keeps one copy of the app data with a version number
 
 | Path | What it is |
 | --- | --- |
-| `src/App.tsx` | Screen switching, bottom nav, sheets, toast, back-button handling, language and currency, shared links |
+| `src/App.tsx` | Screen switching, the three layouts, bottom nav, sheets, toast, back-button handling, language and currency, shared links |
+| `src/layout.ts` | Which layout the window width calls for: phone, half screen or full window |
+| `src/components/Shell.tsx` | Half-screen top bar and tabs, full-window sidebar |
+| `src/components/LogPanel.tsx`, `ParkForm.tsx`, `PastePark.tsx`, `ReadyBanner.tsx` | Logging by typing, the Park it form, paste-a-link, and "Wait's over" choices, shared by the layouts |
+| `src/screens/History.tsx` | History on bigger windows (list at half screen; search, totals and table at full window) |
 | `src/screens/` | One file per screen: Home, Transactions (Spending), Insights (Week), Ask, Goal, Thinking (Park it), Parking, Lookback, Onboarding (+ GoalSetup) |
 | `src/lib/i18n.ts` | English / Indonesian. Strings are written in place as `tr('English', 'Indonesia')` |
 | `src/lib/format.ts` | Money in Rupiah or dollars, and amount fields |
@@ -60,7 +64,8 @@ V1:
 - **"Read the documentation"** under Ask opens an in-app page explaining what Ask sees and where it goes.
 - **Sharing from a shop app** only works once Pocket Sense is installed to the home screen on Android (Chrome's Share target). iPhones don't support it. The name and price come from the text the shop app shares; shop pages can't be read from the browser, so you check them before parking.
 - **Pattern sentences** (Week) keep the real formulas from before; the design's "after 9pm" wording was sample copy.
-- **Goal** moved off the bottom bar (Ask took its place). Tap the goal on Home to open it.
+- **Goal** moved off the bottom bar (Ask took its place). Tap the goal on Home to open it. At half screen it gets a fifth tab, because the design's four tabs left no way to reach it.
+- **Bigger windows:** "Decide" on a parked item opens the same three choices (Skip it, Wait longer, Buy it) in a dialog. Sheets (Quick log, Why?, Sign out) become centred dialogs. Search on the full-window History looks through all purchases, not just this week. The side panel's Park form also lets you park something under your cooldown line, since you pasted it to wait on it.
 
 Before V1:
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { BackBar, StateView } from '../components/common';
 import { GoalPhoto } from '../components/GoalPhoto';
 import { relDate } from '../lib/dates';
@@ -11,14 +11,23 @@ import { useUi } from '../ui';
 
 export function Goal() {
   const { data, actions } = useData();
-  const { now, go, toast } = useUi();
+  const { now, go, toast, layout } = useUi();
+  const wide = layout !== 'phone';
+  const full = layout === 'full';
+  const head = wide
+    ? (action?: ReactNode) => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: full ? '20px 28px' : '16px 20px' }}>
+        <span className={full ? 'wide-title grow' : 'page-title grow'}>{tr('Goal', 'Target')}</span>{action}
+      </div>
+    )
+    : (action?: ReactNode) => <BackBar title={tr('Goal', 'Target')} onBack={() => go('home')} action={action} />;
   const [addOpen, setAddOpen] = useState(false);
 
   const g = goalStats(data, now);
   if (!g.goal) {
     return (
       <div className="screen-fill">
-        <BackBar title={tr('Goal', 'Target')} onBack={() => go('home')} />
+        {head()}
         <StateView heading={tr('No goal yet', 'Belum ada target')}
           body={tr('Pick one thing you are saving for. A photo and a price make it real.', 'Pilih satu hal yang sedang kamu tabung. Foto dan harga membuatnya terasa nyata.')}
           action={tr('Set a goal', 'Buat target')} onAction={() => go('goal-setup')} />
@@ -29,12 +38,13 @@ export function Goal() {
 
   return (
     <div className="screen">
-      <BackBar title={tr('Goal', 'Target')} onBack={() => go('home')}
-        action={<button className="btn btn-ghost btn-link" style={{ alignSelf: 'center' }} onClick={() => go('goal-setup')}>{tr('Edit goal', 'Ubah target')}</button>} />
+      {head(<button className="btn btn-ghost btn-link" style={{ alignSelf: 'center' }} onClick={() => go('goal-setup')}>{tr('Edit goal', 'Ubah target')}</button>)}
+      <div className={full ? 'goal-wide' : undefined}>
       <GoalPhoto pct={g.pct} editable placeholder={tr("Add a photo of what you're saving for", 'Tambahkan foto barang yang kamu tabung')}
-        style={{ height: 280, borderBottom: '2px solid var(--color-divider)' }} />
-      <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1, overflowWrap: 'anywhere' }}>{goalName}</div>
+        style={full ? { height: 320 } : { height: 280, borderBottom: '2px solid var(--color-divider)', borderTop: wide ? '2px solid var(--color-divider)' : 0 }} />
+      <div style={{ padding: full ? '24px 28px' : 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {full && <div className="t13 muted">{tr('Saving for', 'Menabung untuk')}</div>}
+        <div style={{ fontSize: full ? 40 : 32, fontWeight: 800, lineHeight: 1.05, overflowWrap: 'anywhere' }}>{goalName}</div>
         <div className="t15" style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span>{tr(`${money0(g.saved)} of ${money0(g.target)}`, `${money0(g.saved)} dari ${money0(g.target)}`)}</span><span className="w6">{g.pct}%</span>
         </div>
@@ -60,8 +70,9 @@ export function Goal() {
           </div>
         )}
       </div>
+      </div>
       <div className="rule" />
-      <div style={{ padding: '16px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+      <div style={{ padding: full ? '20px 28px 8px' : '16px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <span className="t16 w8">{tr('Added to this goal', 'Masuk ke target ini')}</span><span className="t14 muted">{money0(g.saved)}</span>
       </div>
       {data.contribs.length === 0 && (
@@ -70,7 +81,7 @@ export function Goal() {
         </div>
       )}
       {data.contribs.slice().reverse().map(c => (
-        <div key={c.id} className="row" style={{ alignItems: 'start' }}>
+        <div key={c.id} className="row" style={{ alignItems: 'start', padding: full ? '14px 28px' : undefined }}>
           <div className="row-main"><span className="row-title">{contribLabel(c.label)}</span><span className="row-meta">{relDate(c.at, now)}</span></div>
           <span className="t15 w6">+{money0(c.amt)}</span>
         </div>
