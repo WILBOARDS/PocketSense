@@ -15,14 +15,13 @@ import { readShared } from './lib/share';
 import { loadPhoto, resizePhoto, savePhoto } from './lib/storage';
 import { useStore } from './lib/store';
 import type { Currency } from './lib/types';
-import { Consent, DeleteAccount, Forgot, NewPassword, Privacy, Restore, Settings, SignIn, Upload, Verify, type AuthForm } from './screens/Account';
+import { DeleteAccount, Forgot, NewPassword, Privacy, Restore, Settings, SignIn, Upload, Verify, type AuthForm } from './screens/Account';
 import { Ask, AskAbout } from './screens/Ask';
 import { Goal } from './screens/Goal';
 import { Home } from './screens/Home';
 import { Insights } from './screens/Insights';
 import { Lookback } from './screens/Lookback';
 import { GoalSetup, Onboarding } from './screens/Onboarding';
-import { ParentApprove } from './screens/ParentApprove';
 import { Parking } from './screens/Parking';
 import { Thinking } from './screens/Thinking';
 import { History } from './screens/History';
@@ -36,13 +35,11 @@ import { UiContext, useUi, type LogPrefill, type ParkPrefill, type Screen, type 
 const SHOW_PATTERN_NAMES = true;
 const TABS: Screen[] = ['home', 'transactions', 'insights', 'ask'];
 /** Screens that work before onboarding is done, e.g. signing in on a new PC. */
-const ACCOUNT_SCREENS: Screen[] = ['signin', 'forgot', 'verify', 'new-password', 'consent', 'upload', 'restore', 'delete'];
+const ACCOUNT_SCREENS: Screen[] = ['signin', 'forgot', 'verify', 'new-password', 'upload', 'restore', 'delete'];
 /** Screens whose back button returns to wherever they were opened from. */
 const RETURNS: Screen[] = ['signin', 'privacy', 'ask-about'];
 
 const params = new URLSearchParams(window.location.search);
-/** The token from a parent's approval email link, if this page was opened from one. */
-const consentToken = () => params.get('consent');
 
 /** Something shared from a shop app's Share button (see share_target in the manifest). */
 function takeShared(): ParkPrefill | null {
@@ -64,7 +61,6 @@ export function App() {
   const [authEmail, setAuthEmail] = useState('');
   /** Kept here so opening the privacy policy from Create account and coming back keeps the form. */
   const [authForm, setAuthForm] = useState<AuthForm>({ mode: null, year: '' });
-  const [parentToken, setParentToken] = useState(consentToken);
   const [from, setFrom] = useState<Partial<Record<Screen, Screen>>>({});
   const [parkPrefill, setParkPrefill] = useState<ParkPrefill | null>(null);
   const [shared, setShared] = useState(takeShared);
@@ -169,11 +165,6 @@ export function App() {
     </UiContext.Provider>
   );
 
-  if (parentToken) {
-    const close = () => { history.replaceState(null, '', window.location.pathname); setParentToken(null); };
-    return wrap(<div className="app"><div className="scroll"><ParentApprove token={parentToken} onClose={close} /></div></div>);
-  }
-
   if (store.status === 'error') {
     return (
       <div className="app">
@@ -232,7 +223,6 @@ export function App() {
         {view === 'forgot' && <Forgot email={authEmail} setEmail={setAuthEmail} />}
         {view === 'verify' && <Verify email={authEmail} />}
         {view === 'new-password' && <NewPassword />}
-        {view === 'consent' && <Consent />}
         {view === 'upload' && <Upload />}
         {view === 'restore' && <Restore />}
         {view === 'delete' && <DeleteAccount />}

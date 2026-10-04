@@ -2,7 +2,7 @@
 // POST { question, lang, context, history } with the user's session → { headline, body, price, item }
 //
 // The API key stays here on the server (secret OPENROUTER_API_KEY); the app never sees it.
-// Same rule as sync: nothing is sent for an under-18 user until a parent approves.
+// Ask is for 18+ only: nothing is sent to the AI for an under-18 user.
 import { admin, caller, env, fail, isMinor, json, serve } from '../_shared/util.ts';
 
 const DAILY_LIMIT = 30;
@@ -55,12 +55,12 @@ serve(async req => {
   const lang = body?.lang === 'id' ? 'id' : 'en';
 
   const { data: profile } = await db.from('profiles')
-    .select('birth_year, consent_approved_at, deletion_at').eq('id', user.id).single();
+    .select('birth_year, deletion_at').eq('id', user.id).single();
   if (!profile || profile.birth_year == null || profile.deletion_at) {
     return fail(msg(lang, 'Finish setting up your account first.', 'Selesaikan pengaturan akunmu dulu.'), 403);
   }
-  if (isMinor(profile.birth_year) && !profile.consent_approved_at) {
-    return fail(msg(lang, 'A parent needs to approve your account before you can use Ask.', 'Orang tua perlu menyetujui akunmu sebelum kamu bisa memakai fitur Tanya.'), 403);
+  if (isMinor(profile.birth_year)) {
+    return fail(msg(lang, 'Ask is for 18+', 'Tanya khusus usia 18+'), 403);
   }
 
   const question = String(body?.question ?? '').trim();

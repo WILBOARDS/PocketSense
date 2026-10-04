@@ -5,8 +5,8 @@ Pocket Sense works without any of this. With no Supabase settings, the app hides
 ## Already done
 
 - A Supabase project called **Pocket Sense** (free plan, Singapore).
-- The database: the first three files in [`supabase/migrations/`](../supabase/migrations/) are applied, including the daily job that erases deleted accounts. The fourth (`…_ask_usage.sql`, for Ask) is new in V1: see step 6.
-- The three email functions (`request-consent`, `approve-consent`, `delete-account`) are deployed.
+- The database: the first three files in [`supabase/migrations/`](../supabase/migrations/) are applied, including the daily job that erases deleted accounts. The fourth (`…_ask_usage.sql`, for Ask) is new in V1: see step 6. The fifth (`…_remove_parent_approval.sql`) removes parent approval and still has to be applied (`npx supabase db push`).
+- The `delete-account` email function is deployed. `request-consent` and `approve-consent` were deployed earlier but no longer exist in this repo: remove them in Supabase → Edge Functions.
 - [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml) builds the app from the GitHub secrets and publishes it to GitHub Pages on every push to `main`.
 
 ## Where the keys live (and why nothing leaks)
@@ -56,8 +56,7 @@ Without this, the confirm-email and password-reset links send people to the wron
    - `APP_URL`: `https://wilboards.github.io/PocketSense/`
 
 Two limits while testing:
-- **Resend** only delivers to your own email address until you verify a domain (Resend → Domains). Parent-approval tests must use your own address as the "parent".
-- **Supabase's built-in email** (confirm email, password reset) only sends to members of your Supabase organization, a few per hour. That's you, so testing works. For real users, set up custom SMTP with Resend (Authentication → Emails → SMTP: host `smtp.resend.com`, port `465`, user `resend`, password = a Resend API key) once you have a verified domain.
+- **Resend** only delivers to your own email address until you verify a domain (Resend → Domains).- **Supabase's built-in email** (confirm email, password reset) only sends to members of your Supabase organization, a few per hour. That's you, so testing works. For real users, set up custom SMTP with Resend (Authentication → Emails → SMTP: host `smtp.resend.com`, port `465`, user `resend`, password = a Resend API key) once you have a verified domain.
 
 ### 5. Optional: Continue with Google
 
@@ -65,7 +64,7 @@ In [Google Cloud Console](https://console.cloud.google.com) create an OAuth clie
 
 ### 6. Turn on Ask (AI answers)
 
-Ask sends a question plus a summary of what the user logged to an AI model through [OpenRouter](https://openrouter.ai). It only works for signed-in users (and under-18 users only after a parent approves).
+Ask sends a question plus a summary of what the user logged to an AI model through [OpenRouter](https://openrouter.ai). It only works for signed-in users who are 18 or older.
 
 1. Apply [`supabase/migrations/20261002000000_ask_usage.sql`](../supabase/migrations/20261002000000_ask_usage.sql) (the daily limit of 30 questions per user) and deploy the `ask` function: `npx supabase db push` and `npx supabase functions deploy ask`, or ask Claude to do it through the Supabase MCP.
 2. On openrouter.ai: **Keys → Create key**. Give it a **credit limit** (for example $2) so a bug can't run up a bill. Copy it.
@@ -89,7 +88,7 @@ Copy `app/.env.example` to `app/.env.local`, fill in the two values from step 1,
 - [ ] Supabase → Table Editor → `user_data` has one row.
 - [ ] Open the app in a second browser, tap "I already have an account" on the first onboarding step and sign in: the same purchases appear.
 - [ ] Turn off Wi-Fi and log something: "Offline · 1 change waiting". Turn it back on: "Synced".
-- [ ] Create a second account with a birth year under 18 and use **your own email** as the parent: you get the approval email, approve it, reopen the app, and it copies the data.
+- [ ] Create a second account with a birth year under 18: it copies the data like any other account, but the Ask tab says "Ask is for 18+".
 - [ ] Settings → Delete account → sign in again → "Keep your account?" → Restore.
 - [ ] Ask tab, signed in: "Can I afford Rp 189.000 earbuds?" gives an answer card with "Left this week" and "After buying". Supabase → Table Editor → `ask_usage` shows a count of 1 for today.
 
@@ -100,6 +99,6 @@ Add a new file to `supabase/migrations/` (never edit one that's already applied)
 ## Before real users sign up
 
 - Replace `[date]` and `[contact email]` in the privacy policy (`app/src/screens/Account.tsx`, `POLICY_UPDATED` and `CONTACT_EMAIL`).
-- Verify a domain in Resend and switch `EMAIL_FROM` to it, so parents can actually get emails.
-- The privacy policy and the under-18 flow follow the design. They are **not legal advice**. Ask someone who knows Indonesia's UU PDP before this becomes a real product.
+- Verify a domain in Resend and switch `EMAIL_FROM` to it, so account-deletion emails can reach any address.
+- The privacy policy follows the design. They are **not legal advice**. Ask someone who knows Indonesia's UU PDP before this becomes a real product.
 - The goal photo is not synced. It stays on the device where you added it.

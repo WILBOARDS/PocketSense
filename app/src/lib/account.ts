@@ -2,7 +2,7 @@
 // both copies the same afterwards. Every screen reads it through useAccount().
 //
 // Rules:
-// - Nothing leaves the phone until the server says can_sync (18+, or a parent approved).
+// - Nothing leaves the phone until the server says can_sync (a birth year is set and the account isn't being deleted).
 // - The phone keeps working offline. Changes made then are counted and sent when it's back online.
 // - "Linked" means this phone has copied its data to this account at least once (meta.userId).
 import type { Session } from '@supabase/supabase-js';
@@ -20,8 +20,6 @@ import type { Screen } from '../ui';
 export interface Profile {
   birth_year: number | null;
   minor: boolean;
-  parent_email: string | null;
-  consent_approved: boolean;
   deletion_at: string | null;
   can_sync: boolean;
 }
@@ -81,8 +79,6 @@ export interface AccountValue {
   cancelSignIn: () => Promise<void>;
   sendReset: (email: string) => Result;
   setNewPassword: (password: string) => Result;
-  requestConsent: (parentEmail?: string) => Result;
-  skipConsent: () => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: () => Result;
   restore: () => Result;
@@ -325,17 +321,13 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       }
     }
 
+    // Not reachable today (a birth year is set and deletion is handled above), but never start a copy the server would refuse.
     if (!p.can_sync) {
-      if (interactive) {
-        setLocal({ linking: false, birthYear: null });
-        if (!p.parent_email) go('consent');
-        else { go('home'); toast(tr('Waiting for a parent to approve. Your data stays on this phone.', 'Menunggu persetujuan orang tua. Datamu tetap di HP ini.')); }
-      }
+      if (interactive) setLocal({ linking: false, birthYear: null });
       return;
     }
 
     if (interactive || !isLinked()) {
-      if (!interactive && p.minor) toast(tr('A parent approved. Copying this phone to your account.', 'Orang tua sudah setuju. Menyalin HP ini ke akunmu.'));
       await startLink();
     } else {
       await syncNow();
@@ -397,7 +389,6 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
     const check = () => {
       if (document.visibilityState !== 'visible' || !sessionRef.current) return;
       if (isLinked()) void syncNow();
-      else if (profileRef.current && !profileRef.current.can_sync && profileRef.current.parent_email) void afterSignIn(false);
     };
     const goOnline = () => { setOnline(true); check(); };
     const goOffline = () => setOnline(false);
@@ -416,12 +407,11 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       clearInterval(id);
       clearTimeout(pushTimer.current);
     };
-  }, [syncNow, afterSignIn, setOnline]);
+  }, [syncNow, setOnline]);
 
   const status: AccountStatus = !supabase ? 'off'
     : !session ? 'out'
     : meta.userId === session.user.id && (!profile || profile.can_sync) ? 'in'
-    : profile && !profile.can_sync && profile.minor && profile.parent_email && profile.birth_year && !profile.deletion_at ? 'pendingConsent'
     : 'out';
 
   return useMemo<AccountValue>(() => {
@@ -494,18 +484,6 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
         await afterSignIn(true);
         return null;
       },
-      requestConsent: async parentEmail => {
-        const { error } = await sb.functions.invoke('request-consent', { body: parentEmail ? { parentEmail: parentEmail.trim() } : {} });
-        if (error) return functionError(error);
-        await fetchProfile().catch(() => null);
-        return null;
-      },
-      skipConsent: async () => {
-        setLocal({ linking: false, birthYear: null });
-        await sb.auth.signOut({ scope: 'local' });
-        deps.current.go('home');
-        deps.current.toast(tr('Saved on this phone only. You can sign in later from Settings.', 'Disimpan di HP ini saja. Kamu bisa masuk nanti dari Pengaturan.'));
-      },
       signOut: async () => {
         await sb.auth.signOut({ scope: 'local' });
         clearPhone();
@@ -538,7 +516,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       retryLink: () => void startLink(),
     };
   }, [status, session, profile, online, meta.pending, syncing, local, link, finishing,
-    setLocal, afterSignIn, fetchProfile, clearPhone, startLink]);
+    setLocal, afterSignIn, clearPhone, startLink]);
 }
 
 /** "Sat 3 Oct" from an ISO date. */
