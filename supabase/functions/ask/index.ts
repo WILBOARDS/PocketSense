@@ -1,9 +1,11 @@
-// "Ask": answers a question about the user's own logged money with an AI model through OpenRouter.
+// "Ask": answers a question about the user's own logged money with a free AI model, through NVIDIA NIM
+// and/or OpenRouter (see _shared/ai.ts for the order and the secrets).
 // POST { question, lang, context, history } with the user's session → { headline, body, price, item }
 //
-// The API key stays here on the server (secret OPENROUTER_API_KEY); the app never sees it.
+// The API keys stay here on the server; the app never sees them.
 // Same rule as sync: nothing is sent for an under-18 user until a parent approves.
-import { admin, caller, env, fail, isMinor, json, serve } from '../_shared/util.ts';
+import { askModels, configuredProviders, type ChatMessage } from '../_shared/ai.ts';
+import { admin, caller, fail, isMinor, json, serve } from '../_shared/util.ts';
 
 const DAILY_LIMIT = 30;
 const MAX_QUESTION = 300;
@@ -72,6 +74,13 @@ serve(async req => {
     ? body.history.slice(-MAX_HISTORY).map((t: { q?: unknown; a?: unknown }) => ({ q: String(t?.q ?? '').slice(0, MAX_QUESTION), a: String(t?.a ?? '').slice(0, 800) }))
     : [];
 
+  // Checked before counting, so a missing key doesn't use up one of today's 30.
+  const providers = configuredProviders(name => Deno.env.get(name));
+  if (!providers.length) {
+    console.error('Ask: no AI provider set up. Add NVIDIA_API_KEY + NVIDIA_MODEL and/or OPENROUTER_API_KEY + OPENROUTER_MODEL.');
+    return fail(msg(lang, "Ask isn't switched on yet.", 'Fitur Tanya belum diaktifkan.'), 503);
+  }
+
   // Counts the question before calling the model, so a failed call still uses one of today's 30.
   const { data: allowed, error } = await db.rpc('ask_take', { p_user: user.id, p_limit: DAILY_LIMIT });
   if (error) throw error;
@@ -79,37 +88,16 @@ serve(async req => {
     return fail(msg(lang, `That's ${DAILY_LIMIT} questions today. Ask again tomorrow.`, `Sudah ${DAILY_LIMIT} pertanyaan hari ini. Tanya lagi besok.`), 429);
   }
 
-  const messages = [
+  const messages: ChatMessage[] = [
     { role: 'system', content: SYSTEM },
     { role: 'user', content: `lang: ${lang}\ndata: ${context}` },
-    ...history.flatMap(t => [{ role: 'user', content: t.q }, { role: 'assistant', content: t.a }]),
+    ...history.flatMap((t): ChatMessage[] => [{ role: 'user', content: t.q }, { role: 'assistant', content: t.a }]),
     { role: 'user', content: question },
   ];
 
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env('OPENROUTER_API_KEY')}`,
-      'Content-Type': 'application/json',
-      'X-Title': 'Pocket Sense',
-    },
-    body: JSON.stringify({
-      model: env('OPENROUTER_MODEL'),
-      messages,
-      max_tokens: 600,
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    }),
-  });
-  if (!res.ok) {
-    console.error('OpenRouter', res.status, await res.text());
-    return fail(msg(lang, "Ask couldn't answer right now. Try again in a minute.", 'Fitur Tanya belum bisa menjawab sekarang. Coba lagi sebentar lagi.'), 502);
-  }
-  const out = await res.json().catch(() => null);
-  const answer = parseAnswer(String(out?.choices?.[0]?.message?.content ?? ''));
+  const answer = await askModels(providers, messages, parseAnswer);
   if (!answer) {
-    console.error('Unreadable answer', JSON.stringify(out).slice(0, 2000));
-    return fail(msg(lang, "Couldn't read the answer. Try asking another way.", 'Jawabannya tidak terbaca. Coba tanya dengan cara lain.'), 502);
+    return fail(msg(lang, "Ask couldn't answer right now. Try again in a minute.", 'Fitur Tanya belum bisa menjawab sekarang. Coba lagi sebentar lagi.'), 502);
   }
   return json(answer);
 });

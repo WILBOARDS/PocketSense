@@ -38,7 +38,7 @@ How sync works: the account keeps one copy of the app data with a version number
 | `src/lib/format.ts` | Money in Rupiah or dollars, and amount fields |
 | `src/lib/share.ts` | Reads a product name, price and shop from a shared or pasted link |
 | `src/lib/ask.ts` | What Ask sends to the AI (a summary, no account details) and checks the answer |
-| `../supabase/functions/ask/` | The server side of Ask: checks the user, counts questions, calls the AI through OpenRouter |
+| `../supabase/functions/ask/` | The server side of Ask: checks the user, counts questions, calls a free AI model through NVIDIA NIM and/or OpenRouter |
 | `src/sheets/` | Quick log and "Why?" bottom sheets |
 | `src/lib/classify.ts` | Need / Useful / Want / Invest scoring and its reasons |
 | `src/lib/insights.ts` | Pattern cards and stats. The formulas are documented at the top |
