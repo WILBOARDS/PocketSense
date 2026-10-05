@@ -60,7 +60,7 @@ export async function askModels<T>(
       const res = await doFetch(p.url, {
         method: 'POST',
         headers: { Authorization: `Bearer ${p.key}`, 'Content-Type': 'application/json', ...p.headers },
-        body: JSON.stringify({ model: p.model, messages, max_tokens: 600, temperature: 0.3, ...p.extra }),
+        body: JSON.stringify({ model: p.model, messages, max_tokens: 400, temperature: 0.3, ...p.extra }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (!res.ok) {

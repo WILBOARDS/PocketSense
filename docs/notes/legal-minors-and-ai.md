@@ -28,12 +28,13 @@ How sure each line is:
 
 - Under 18: a parent must approve before data is stored on the server or sent to Ask (`supabase/functions/ask/index.ts`, `request-consent`, `approve-consent`).
 - Ask sends a summary of the last 4 weeks of logged spending. It never sends the email or birth year.
+- Ask is limited to the user's own money by a prompt plus checks on the answer (see `backend-status.md`, "Keeping Ask to money questions"). That helps with Google Play's rule that AI must not produce unsafe content for minors (rule 3), but it is not a guarantee.
 - The privacy text and the "About Ask" screen now say the question goes to **NVIDIA or OpenRouter** (updated 4 Oct 2026 when NVIDIA was added).
 
 ## Open decisions (yours)
 
 1. **Removing parent approval.** The backend doc's plan (Account.tsx split, step 1) deletes the parent-approval flow. From rules 1 and 2 as summarized above, that looks like it conflicts with the law while under-18s can still create accounts. Options: keep parent approval, or block under-18s from accounts and keep them on the local-only mode. Decide this *before* doing step 1.
-2. **Who owns the NVIDIA and OpenRouter accounts?** Rules 4 and 5 need an adult (of legal age of majority) as account holder. If that is not you today, put the accounts under someone who qualifies, or the keys can be shut off.
+2. **Account holder for NVIDIA and OpenRouter.** Rules 4 and 5 need an adult (of legal age of majority) as account holder. Decided 5 Oct 2026: it will be the project owner once they qualify. Until then the keys are for private testing only and must not back real users. Not checked: whether Indonesia counts 18 or 21 as the age of majority for this. I believe it differs between laws [memory], so confirm.
 3. **"AI for Germany"** was unanswered: if it means Gemini, that is ruled out (rule 6). If it means German users, that adds the GDPR (rule 8) and a German translation, which does not exist yet (the app has English and Indonesian only).
 4. **Before launch:** read NVIDIA's and OpenRouter's data-retention terms in full, and check rule 3 in Play Console.
 
