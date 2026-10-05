@@ -47,12 +47,11 @@ export interface SyncView {
   fg: string;
 }
 
-export type AccountStatus = 'off' | 'out' | 'in' | 'pendingConsent';
+export type AccountStatus = 'off' | 'out' | 'in';
 
 /** The status line under the date on Home and in Settings. Empty label when signed out. */
 export function syncView(status: AccountStatus, online: boolean, pending: number, syncing: boolean): SyncView {
   const ink = 'var(--color-text)', grey = 'var(--color-neutral-500)';
-  if (status === 'pendingConsent') return { label: tr('Sync waits for parent', 'Sinkron menunggu orang tua'), dot: grey, fg: ink };
   if (status !== 'in') return { label: '', dot: ink, fg: ink };
   if (!online) {
     return {

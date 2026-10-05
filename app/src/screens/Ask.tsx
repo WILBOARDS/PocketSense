@@ -38,7 +38,9 @@ export function Ask() {
   const acc = useAccount();
   const { go, layout } = useUi();
   const signedIn = acc.enabled && acc.status === 'in';
-  if (!signedIn) kept = [];
+  // The server checks this too; this just shows the reason instead of a chat that can't answer.
+  const minor = signedIn && !!acc.profile?.minor;
+  if (!signedIn || minor) kept = [];
 
   return (
     <div className="screen-fill" style={{ height: '100%' }}>
@@ -47,19 +49,19 @@ export function Ask() {
         {layout === 'full' && <span className="t14 muted">{tr('Can I afford it?', 'Mampu nggak?')}</span>}
       </div>
       <div className="rule" />
-      {signedIn ? <Chat /> : (
+      {signedIn && !minor ? <Chat /> : (
         <div style={{ padding: '20px 20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <AiNote />
           <div className="pretty" style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.1, paddingTop: 12 }}>
             {!acc.enabled ? tr('Ask isn\'t set up yet', 'Fitur Tanya belum diatur')
-              : acc.status === 'pendingConsent' ? tr('Waiting for a parent', 'Menunggu orang tua')
+              : minor ? tr('Ask is for 18+', 'Tanya khusus usia 18+')
               : tr('Ask needs an account', 'Fitur Tanya butuh akun')}
           </div>
           <div className="t15 pretty" style={{ lineHeight: 1.5 }}>
             {!acc.enabled
               ? tr('This copy of Pocket Sense has no server, so there is nothing to answer questions.', 'Salinan Pocket Sense ini tidak punya server, jadi belum ada yang bisa menjawab pertanyaan.')
-              : acc.status === 'pendingConsent'
-                ? tr("You're under 18, so Ask works once a parent approves your account.", 'Kamu di bawah 18 tahun, jadi fitur Tanya bisa dipakai setelah orang tua menyetujui akunmu.')
+              : minor
+                ? tr("Ask is only for people 18 or older, so it isn't available on your account. Everything else in Pocket Sense works as normal.", 'Fitur Tanya hanya untuk usia 18 tahun ke atas, jadi tidak tersedia di akunmu. Fitur Pocket Sense lainnya tetap bisa dipakai seperti biasa.')
                 : tr('Answers come from an AI on our server, so your question and a summary of what you logged have to leave this phone. Sign in to use it.',
                   'Jawaban dibuat oleh AI di server kami, jadi pertanyaan dan ringkasan catatanmu harus dikirim dari HP ini. Masuk untuk memakainya.')}
           </div>
@@ -211,8 +213,8 @@ export function AskAbout({ onBack }: { onBack: () => void }) {
       'AI can misread a number or make something up. The "Left this week" and "After buying" figures are worked out by the app itself, not by the AI, so trust those over the text. Ask gives no investment or loan advice.',
       'AI bisa salah membaca angka atau mengarang. Angka "Sisa minggu ini" dan "Setelah beli" dihitung oleh aplikasi sendiri, bukan oleh AI, jadi lebih percayai angka itu daripada teksnya. Fitur Tanya tidak memberi saran investasi atau pinjaman.')],
     [tr('Limits', 'Batas'), tr(
-      'You can ask up to 30 questions a day. Ask needs an account, and if you\'re under 18 a parent has to approve it first.',
-      'Kamu bisa bertanya sampai 30 kali sehari. Fitur Tanya butuh akun, dan kalau kamu di bawah 18 tahun, orang tua harus menyetujuinya dulu.')],
+      'You can ask up to 30 questions a day. Ask needs an account and is only for people 18 or older.',
+      'Kamu bisa bertanya sampai 30 kali sehari. Fitur Tanya butuh akun dan hanya untuk usia 18 tahun ke atas.')],
   ];
   return (
     <div className="screen">

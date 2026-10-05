@@ -38,7 +38,7 @@ Your backend doc says "Login emails: Brevo SMTP". There are **two kinds of email
 | Email | Who sends it | Where it is set up |
 |---|---|---|
 | Confirm sign-up, reset password | **Supabase Auth** itself | Supabase dashboard, Authentication, Emails, SMTP settings. No code involved. |
-| Parent approval, account-deletion notice | Your Edge Functions (`request-consent`, `delete-account`) | `sendEmail()` in `supabase/functions/_shared/util.ts`, which calls **Resend** |
+| Account-deletion notice | Your Edge Function (`delete-account`) | `sendEmail()` in `supabase/functions/_shared/util.ts`, which calls **Resend** |
 
 So the doc is right that Brevo can send login emails without any code. I was wrong to say flatly that "the app uses neither": the repo has no Brevo code, but the Supabase dashboard may well be pointing at Brevo, and I have no tool that can read that setting. Check it yourself:
 
@@ -46,7 +46,7 @@ So the doc is right that Brevo can send login emails without any code. I was wro
 - Brevo, SMTP & API. Brevo's account lookup shows its relay as `enabled: false`. I don't know exactly what that flag means, so confirm SMTP is active there.
 - The Brevo sender is a Gmail address. I believe mail sent "from" a Gmail address through a third party often gets rejected or lands in spam, but I did not test it. A cheap domain of your own fixes it for Brevo and Resend.
 
-The two emails the code sends (parent approval, deletion notice) still go through Resend. Two options: verify a domain in Resend, or change `sendEmail()` to call Brevo's API so one provider does everything. If you switch, the privacy text (`PrivacyText` in `Account.tsx`) also says "Resend" and must change.
+The one email the code sends (the deletion notice; the parent-approval email was removed in PR #5) still goes through Resend. Two options: verify a domain in Resend, or change `sendEmail()` to call Brevo's API so one provider does everything. If you switch, the privacy text (`PrivacyText` in `Account.tsx`) also says "Resend" and must change.
 
 ## What I changed on 4 Oct
 
@@ -117,5 +117,5 @@ Tested with fake model replies (25 new checks in `app/src/lib/ask-server.test.ts
 1. **Sentry:** create the project, `npm i @sentry/react`, start it in `main.tsx` only when `VITE_SENTRY_DSN` is set (same off-by-default pattern as `supabase.ts`), add that variable to `deploy-pages.yml` and as a GitHub secret, no Replay, no user details, scrub names and amounts. I would confirm the exact option names in Sentry's current React docs while doing it. Then throw a test error and check it shows up in Sentry.
 2. **Keep-alive:** a daily GitHub Action that pings Supabase, so the free project does not pause after a week idle (per your doc; I did not verify the rule). None exists in `.github/workflows/`.
 3. **Email:** whichever you choose in step 5 above.
-4. **Supabase security advisor** flagged 4 database functions (`account_status`, `cancel_deletion`, `push_data`, `set_birth_year`) that signed-in users can call directly, plus `consent_requests` having no policies. These may be intended by design. I did not read the SQL, so review them before launch.
+4. **Supabase security advisor** flagged 4 database functions (`account_status`, `cancel_deletion`, `push_data`, `set_birth_year`) that signed-in users can call directly, plus `consent_requests` having no policies (that table is dropped by the `…_remove_parent_approval.sql` migration). These may be intended by design. I did not read the SQL, so review them before launch.
 5. **Migration history:** the live project records its migrations under different version numbers than the files in `supabase/migrations/`. Keep applying changes through the connector, or expect `npx supabase db push` to try to re-apply old ones.

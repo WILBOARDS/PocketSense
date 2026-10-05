@@ -84,7 +84,6 @@ describe('syncView', () => {
     expect(syncView('in', false, 0, false).label).toBe('Offline');
     expect(syncView('in', false, 1, false).label).toBe('Offline · 1 change waiting');
     expect(syncView('in', false, 3, false).label).toBe('Offline · 3 changes waiting');
-    expect(syncView('pendingConsent', true, 0, false).label).toBe('Sync waits for parent');
   });
 });
 

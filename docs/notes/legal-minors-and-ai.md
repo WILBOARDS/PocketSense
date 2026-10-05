@@ -14,7 +14,7 @@ How sure each line is:
 
 | # | Rule | What it could mean for Pocket Sense | How sure |
 |---|------|--------------------------------------|----------|
-| 1 | **Indonesia, UU PDP (Law 27/2022), Article 25.** Processing a child's personal data needs the consent of the parent and/or guardian. | The parent-approval flow (sync and Ask locked until a parent approves) exists because of this. | [search] Legal portals and a Kompas article. I did not read the article text. That "child" means under 18 is [memory]. |
+| 1 | **Indonesia, UU PDP (Law 27/2022), Article 25.** Processing a child's personal data needs the consent of the parent and/or guardian. | The parent-approval flow (sync and Ask locked until a parent approves) existed because of this. It was removed in PR #5 (5 Oct 2026), so under-18s can now sync without a parent's consent. See open decision 1. | [search] Legal portals and a Kompas article. I did not read the article text. That "child" means under 18 is [memory]. |
 | 2 | **Indonesia, PP 17/2025 ("PP Tunas")**, in force since 1 Apr 2025. Splits children into 5 age bands (3-5, 6-9, 10-12, 13-15, 16 to under 18). Platform operators must verify age, limit access by age, offer parental controls, and handle a child's data only with parent/guardian consent. "High-risk" platforms must deactivate accounts of under-16s from 28 Mar 2026. | Same direction as rule 1. Whether Pocket Sense or its AI feature counts as "high-risk" depends on criteria I have not read. | [search] Kompas, Bisnis and law-firm summaries. |
 | 3 | **Google Play** rules for apps that reach minors (Families policy, AI-Generated Content policy; policy update 15 Jul 2026). AI output must not be unsafe for minors, and AI outputs need labelling and moderation. | Declare the app's target age group honestly in Play Console. Ask is AI-written text, so the AI policy applies. | [search] Play Console help pages. I believe Play also expects an in-app way to report bad AI answers: [memory], please verify. |
 | 4 | **OpenRouter Terms:** you must be 18 or older to use the service. | This is about whoever owns the OpenRouter account, not your app's users. | [search] Quoted from openrouter.ai/terms. |
@@ -26,14 +26,14 @@ How sure each line is:
 
 ## What the app does today
 
-- Under 18: a parent must approve before data is stored on the server or sent to Ask (`supabase/functions/ask/index.ts`, `request-consent`, `approve-consent`).
+- There is no parent approval (removed in PR #5). Anyone with a birth year can sync. Under 18 (by birth year only): nothing is sent to Ask, and Ask says "Ask is for 18+" (`supabase/functions/ask/index.ts`).
 - Ask sends a summary of the last 4 weeks of logged spending. It never sends the email or birth year.
 - Ask is limited to the user's own money by a prompt plus checks on the answer (see `backend-status.md`, "Keeping Ask to money questions"). That helps with Google Play's rule that AI must not produce unsafe content for minors (rule 3), but it is not a guarantee.
 - The privacy text and the "About Ask" screen now say the question goes to **NVIDIA or OpenRouter** (updated 4 Oct 2026 when NVIDIA was added).
 
 ## Open decisions (yours)
 
-1. **Removing parent approval.** The backend doc's plan (Account.tsx split, step 1) deletes the parent-approval flow. From rules 1 and 2 as summarized above, that looks like it conflicts with the law while under-18s can still create accounts. Options: keep parent approval, or block under-18s from accounts and keep them on the local-only mode. Decide this *before* doing step 1.
+1. **Removing parent approval.** *Status, 5 Oct 2026: the project owner had it removed (PR #5) before this was decided, in line with "prototype first, law before real users". The legal question below is still open and must be settled before real users.* The backend doc's plan (Account.tsx split, step 1) deletes the parent-approval flow. From rules 1 and 2 as summarized above, that looks like it conflicts with the law while under-18s can still create accounts. Options: keep parent approval, or block under-18s from accounts and keep them on the local-only mode. Decide this *before* doing step 1.
 2. **Account holder for NVIDIA and OpenRouter.** Rules 4 and 5 need an adult (of legal age of majority) as account holder. Decided 5 Oct 2026: it will be the project owner once they qualify. Until then the keys are for private testing only and must not back real users. Not checked: whether Indonesia counts 18 or 21 as the age of majority for this. I believe it differs between laws [memory], so confirm.
 3. **"AI for Germany"** was unanswered: if it means Gemini, that is ruled out (rule 6). If it means German users, that adds the GDPR (rule 8) and a German translation, which does not exist yet (the app has English and Indonesian only).
 4. **Before launch:** read NVIDIA's and OpenRouter's data-retention terms in full, and check rule 3 in Play Console.
