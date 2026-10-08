@@ -6,7 +6,7 @@ import type { CatId } from './lib/types';
 export type Screen = 'home' | 'transactions' | 'insights' | 'ask' | 'ask-about' | 'goals' | 'thinking' | 'parking' | 'lookback' | 'goal-setup'
   | 'settings' | 'privacy'
   // Account screens
-  | 'signin' | 'forgot' | 'verify' | 'new-password' | 'upload' | 'restore' | 'delete';
+  | 'signin' | 'forgot' | 'verify' | 'new-password' | 'consent' | 'upload' | 'restore' | 'delete';
 
 export interface LogPrefill {
   amt?: number;

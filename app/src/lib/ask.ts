@@ -3,7 +3,7 @@
 // Pure, like sync.ts: the request itself is in screens/Ask.tsx.
 //
 // Only a summary of the last 4 weeks goes out: amounts, categories, classes, moods, wallets and
-// times. No email, birth year or account details. The numbers the answer card shows ("Left this week",
+// times. No email, date of birth or account details. The numbers the answer card shows ("Left this week",
 // "After buying") are worked out here from the same data, never taken from the AI.
 import { catName, purchaseName } from './constants';
 import { addDays, shortDate, clock } from './dates';

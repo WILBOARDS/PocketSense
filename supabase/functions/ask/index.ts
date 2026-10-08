@@ -7,7 +7,8 @@
 // Ask is for 18+ only: nothing is sent to the AI for an under-18 user.
 import { askModels, configuredProviders, type ChatMessage } from '../_shared/ai.ts';
 import { readAnswer, SYSTEM } from '../_shared/ask-rules.ts';
-import { admin, caller, fail, isMinor, json, serve } from '../_shared/util.ts';
+import { isMinorOn } from '../_shared/age.ts';
+import { admin, caller, fail, json, serve } from '../_shared/util.ts';
 
 const DAILY_LIMIT = 30;
 const MAX_QUESTION = 300;
@@ -25,11 +26,11 @@ serve(async req => {
   const lang = body?.lang === 'id' ? 'id' : 'en';
 
   const { data: profile } = await db.from('profiles')
-    .select('birth_year, deletion_at').eq('id', user.id).single();
-  if (!profile || profile.birth_year == null || profile.deletion_at) {
+    .select('date_of_birth, deletion_at').eq('id', user.id).single();
+  if (!profile || profile.date_of_birth == null || profile.deletion_at) {
     return fail(msg(lang, 'Finish setting up your account first.', 'Selesaikan pengaturan akunmu dulu.'), 403);
   }
-  if (isMinor(profile.birth_year)) {
+  if (isMinorOn(profile.date_of_birth)) {
     return fail(msg(lang, 'Ask is for 18+', 'Tanya khusus usia 18+'), 403);
   }
 

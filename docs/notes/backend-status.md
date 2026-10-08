@@ -38,7 +38,7 @@ Your backend doc says "Login emails: Brevo SMTP". There are **two kinds of email
 | Email | Who sends it | Where it is set up |
 |---|---|---|
 | Confirm sign-up, reset password | **Supabase Auth** itself | Supabase dashboard, Authentication, Emails, SMTP settings. No code involved. |
-| Account-deletion notice | Your Edge Function (`delete-account`) | `sendEmail()` in `supabase/functions/_shared/util.ts`, which calls **Resend** |
+| Account-deletion notice, parent-approval request | Your Edge Functions (`delete-account`, `request-consent`) | `sendEmail()` in `supabase/functions/_shared/util.ts`, which calls **Brevo** (changed 8 Oct 2026; was Resend) |
 
 So the doc is right that Brevo can send login emails without any code. I was wrong to say flatly that "the app uses neither": the repo has no Brevo code, but the Supabase dashboard may well be pointing at Brevo, and I have no tool that can read that setting. Check it yourself:
 
@@ -46,7 +46,7 @@ So the doc is right that Brevo can send login emails without any code. I was wro
 - Brevo, SMTP & API. Brevo's account lookup shows its relay as `enabled: false`. I don't know exactly what that flag means, so confirm SMTP is active there.
 - The Brevo sender is a Gmail address. I believe mail sent "from" a Gmail address through a third party often gets rejected or lands in spam, but I did not test it. A cheap domain of your own fixes it for Brevo and Resend.
 
-The one email the code sends (the deletion notice; the parent-approval email was removed in PR #5) still goes through Resend. Two options: verify a domain in Resend, or change `sendEmail()` to call Brevo's API so one provider does everything. If you switch, the privacy text (`PrivacyText` in `Account.tsx`) also says "Resend" and must change.
+**Update, 8 Oct 2026:** the code now sends both of its emails (deletion notice and parent approval) through Brevo, and the privacy text says so. The paragraph below is the older note, kept for history. The sender is still a Gmail address until you own a domain. The earlier choice was:  verify a domain in Resend, or change `sendEmail()` to call Brevo's API so one provider does everything. If you switch, the privacy text (`PrivacyText` in `Account.tsx`) also says "Resend" and must change.
 
 ## What I changed on 4 Oct
 

@@ -1,7 +1,8 @@
-// Account screens: Settings, sign in / create account, password reset,
+// Account screens: Settings, sign in / create account, password reset, parent approval request,
 // the first copy to the account, restore, delete and the privacy policy.
 import { useState, type ReactNode } from 'react';
 import { BackBar } from '../components/common';
+import { parseBirthDate } from '../lib/age';
 import { ChevronRight } from '../components/icons';
 import { formatDay, useAccount } from '../lib/account';
 import { THRESHOLDS } from '../lib/constants';
@@ -14,7 +15,6 @@ import type { Currency } from '../lib/types';
 import { useUi } from '../ui';
 import { LangSwitch } from './Onboarding';
 
-const THIS_YEAR = new Date().getFullYear();
 
 function Section({ children }: { children: ReactNode }) {
   return <div className="t16 w8" style={{ padding: '20px 20px 12px' }}>{children}</div>;
@@ -52,11 +52,18 @@ export function Settings({ onSignOut }: { onSignOut: () => void }) {
   const acc = useAccount();
   const { data, actions } = useData();
   const { go, toast, layout } = useUi();
+  const [sending, setSending] = useState(false);
   const [editing, setEditing] = useState<'week' | 'cooldown' | 'currency' | null>(null);
   const [weekStr, setWeekStr] = useState('');
   const s = data.settings;
   const currency = s.currency ?? 'USD';
 
+  const resend = async () => {
+    setSending(true);
+    const err = await acc.requestConsent();
+    setSending(false);
+    toast(err ?? tr(`Sent again to ${acc.profile?.parent_email}.`, `Dikirim lagi ke ${acc.profile?.parent_email}.`));
+  };
   const toggle = (k: typeof editing) => {
     setEditing(editing === k ? null : k);
     if (k === 'week') setWeekStr(amountText(s.weekMoney));
@@ -147,12 +154,22 @@ export function Settings({ onSignOut }: { onSignOut: () => void }) {
           <div style={{ padding: '0 20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div className={body15} style={{ lineHeight: 1.5 }}>
               {acc.local.deletionAt
-                ? tr(`Your account will be deleted on ${formatDay(acc.local.deletionAt)}. Sign in before then to keep it.`,
-                  `Akunmu akan dihapus pada ${formatDay(acc.local.deletionAt)}. Masuk sebelum itu untuk menyimpannya.`)
+                ? tr(`Your account will be deleted on ${formatDay(acc.local.deletionAt)}. Sign in and tap Restore my account before then to keep it.`,
+                  `Akunmu akan dihapus pada ${formatDay(acc.local.deletionAt)}. Masuk lalu ketuk Pulihkan akunku sebelum itu untuk menyimpannya.`)
                 : tr('Optional. Sign in only if you want Pocket Sense on your PC too. Without an account, everything stays on this phone.',
                   'Opsional. Masuk hanya kalau kamu mau pakai Pocket Sense di PC juga. Tanpa akun, semua data tetap di HP ini.')}
             </div>
             <button className="btn btn-primary btn-md self-start" onClick={() => go('signin')}>{tr('Sign in or create account', 'Masuk atau buat akun')}</button>
+          </div>
+        )}
+        {acc.status === 'pendingConsent' && (
+          <div style={{ padding: '0 20px 24px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="t15 w6" style={{ overflowWrap: 'anywhere' }}>{maskEmail(acc.email)}</div>
+            <div className="t14 pretty" style={{ lineHeight: 1.5 }}>
+              {tr('Waiting for a parent to approve. Your data stays on this phone until then.', 'Menunggu persetujuan orang tua. Sampai saat itu datamu tetap di HP ini.')}
+            </div>
+            <div className="t13 muted" style={{ overflowWrap: 'anywhere' }}>{tr('Request sent to', 'Permintaan dikirim ke')} {acc.profile?.parent_email}</div>
+            <button className="btn btn-ghost btn-link" disabled={sending} onClick={resend}>{tr('Resend request', 'Kirim ulang permintaan')}</button>
           </div>
         )}
         {acc.status === 'in' && <>
@@ -190,6 +207,9 @@ function PrefRow({ label, value, open, onClick }: { label: string; value: string
 export interface AuthForm {
   /** Null until the user picks a tab. */
   mode: 'signin' | 'signup' | null;
+  /** The three boxes of the date of birth, as typed. */
+  day: string;
+  month: string;
   year: string;
 }
 
@@ -199,8 +219,7 @@ export function SignIn({ email, setEmail, form, setForm, onBack }: {
   const acc = useAccount();
   const { go } = useUi();
   const mode = form.mode ?? (acc.finishing ? 'signup' : 'signin');
-  const yearStr = form.year;
-  const setYearStr = (year: string) => setForm({ mode, year });
+  const setPart = (part: 'day' | 'month' | 'year', value: string) => setForm({ ...form, mode, [part]: value.replace(/\D/g, '') });
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
@@ -208,12 +227,12 @@ export function SignIn({ email, setEmail, form, setForm, onBack }: {
   const finishing = acc.finishing;
   const signup = mode === 'signup' || finishing;
 
-  /** Checks the Create account extras. Returns the birth year, or null after showing an error. */
-  const checkSignup = (): number | null => {
-    const y = parseInt(yearStr, 10);
-    if (!(y > 1900 && y <= THIS_YEAR)) { setError(tr('Enter the year you were born.', 'Isi tahun lahirmu.')); return null; }
+  /** Checks the Create account extras. Returns the date of birth as YYYY-MM-DD, or null after showing an error. */
+  const checkSignup = (): string | null => {
+    const born = parseBirthDate(form.day, form.month, form.year);
+    if (!born.ok) { setError(tr('Enter your real date of birth, for example 31 12 2008.', 'Isi tanggal lahirmu yang benar, misalnya 31 12 2008.')); return null; }
     if (!agreed) { setError(tr('Tick the box to agree to the privacy policy.', 'Centang kotaknya untuk menyetujui kebijakan privasi.')); return null; }
-    return y;
+    return born.iso;
   };
 
   const run = async (fn: () => Promise<string | null>) => {
@@ -225,25 +244,25 @@ export function SignIn({ email, setEmail, form, setForm, onBack }: {
 
   const submitEmail = () => {
     if (finishing) {
-      const y = checkSignup();
-      if (y) void run(() => acc.finishProfile(y));
+      const d = checkSignup();
+      if (d) void run(() => acc.finishProfile(d));
       return;
     }
     if (!isEmail(email)) return setError(tr('Enter a valid email address.', 'Isi alamat email yang benar.'));
     if (password.length < 8) return setError(tr('Password needs at least 8 characters.', 'Kata sandi minimal 8 karakter.'));
     if (mode === 'signin') return void run(() => acc.signIn(email, password));
-    const y = checkSignup();
-    if (y) void run(() => acc.signUp(email, password, y));
+    const d = checkSignup();
+    if (d) void run(() => acc.signUp(email, password, d));
   };
 
   const submitGoogle = () => {
     if (mode === 'signin') return void run(() => acc.google(null));
-    const y = checkSignup();
-    if (y) void run(() => acc.google(y));
+    const d = checkSignup();
+    if (d) void run(() => acc.google(d));
   };
 
   const back = () => { if (finishing) void acc.cancelSignIn(); onBack(); };
-  const pick = (m: 'signin' | 'signup') => { setForm({ mode: m, year: yearStr }); setError(''); };
+  const pick = (m: 'signin' | 'signup') => { setForm({ ...form, mode: m }); setError(''); };
 
   return (
     <div className="screen">
@@ -276,13 +295,25 @@ export function SignIn({ email, setEmail, form, setForm, onBack }: {
           </div>
         </>}
         {signup && <>
-          <div className="field">
-            <label htmlFor="au-year">{tr('Birth year', 'Tahun lahir')}</label>
-            <input id="au-year" className="input input-lg" inputMode="numeric" maxLength={4} placeholder="2008" value={yearStr}
-              onChange={e => { setYearStr(e.target.value.replace(/\D/g, '')); setError(''); }} />
-          </div>
+          <fieldset className="field" style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+            <legend style={{ padding: 0, marginBottom: 6 }}>{tr('Date of birth', 'Tanggal lahir')}</legend>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr)', gap: 10 }}>
+              {([
+                ['day', tr('Day', 'Tanggal'), 'DD', 2, 'bday-day'],
+                ['month', tr('Month', 'Bulan'), 'MM', 2, 'bday-month'],
+                ['year', tr('Year', 'Tahun'), 'YYYY', 4, 'bday-year'],
+              ] as const).map(([part, label, hint, max, auto]) => (
+                <div key={part} className="field">
+                  <label htmlFor={`au-${part}`} className="t13 muted">{label}</label>
+                  <input id={`au-${part}`} className="input input-lg" inputMode="numeric" autoComplete={auto} maxLength={max} placeholder={hint}
+                    value={form[part]} onChange={e => { setPart(part, e.target.value); setError(''); }} />
+                </div>
+              ))}
+            </div>
+          </fieldset>
           <div className="t13 muted" style={{ lineHeight: 1.45, marginTop: -6 }}>
-            {tr('Ask (AI answers) is for 18+ only.', 'Fitur Tanya (jawaban AI) khusus usia 18+.')}
+            {tr("Only used to check your age. Under 18? We'll ask a parent to approve before anything syncs, and Ask stays 18+ only.",
+              'Hanya dipakai untuk memeriksa usiamu. Di bawah 18 tahun? Kami minta persetujuan orang tua sebelum data disinkronkan, dan fitur Tanya tetap khusus 18+.')}
           </div>
           {/* The link is a sibling of the checkbox, not inside it, so opening the policy doesn't tick the box. */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 48 }}>
@@ -410,6 +441,56 @@ export function NewPassword() {
   );
 }
 
+// ─── Parent approval request ──────────────────────────────────────────────────
+
+export function Consent() {
+  const acc = useAccount();
+  const { go } = useUi();
+  const [parentEmail, setParentEmail] = useState('');
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const send = async () => {
+    if (!isEmail(parentEmail)) return setError(tr("Enter your parent or guardian's email.", 'Isi email orang tua atau walimu.'));
+    if (parentEmail.trim().toLowerCase() === (acc.email ?? '').toLowerCase()) return setError(tr('Use a different email from your own.', 'Pakai email yang beda dari emailmu.'));
+    setBusy(true);
+    const err = await acc.requestConsent(parentEmail);
+    setBusy(false);
+    if (err) return setError(err);
+    setSent(true);
+  };
+
+  return (
+    <FlowPage label={tr('Parent approval', 'Persetujuan orang tua')} accent>
+      {!sent ? <>
+        <div style={flowTitle}>{tr('Ask a parent to approve', 'Minta persetujuan orang tua')}</div>
+        <div className={body15} style={{ lineHeight: 1.5 }}>
+          {tr("You're under 18, so a parent or guardian needs to agree before your data is stored on our server.", 'Kamu di bawah 18 tahun, jadi orang tua atau wali perlu setuju dulu sebelum datamu disimpan di server kami.')}
+        </div>
+        <div className={body15} style={{ lineHeight: 1.5 }}>{tr('Until then, Pocket Sense works as normal on this phone.', 'Sampai saat itu, Pocket Sense tetap jalan seperti biasa di HP ini.')}</div>
+        <div className="field">
+          <label htmlFor="pc-email">{tr("Parent or guardian's email", 'Email orang tua atau wali')}</label>
+          <input id="pc-email" className="input input-lg" type="email" value={parentEmail}
+            onChange={e => { setParentEmail(e.target.value); setError(''); }} />
+        </div>
+        <ErrorLine msg={error} />
+        <div className="grow" />
+        <button className="btn btn-primary btn-lg" disabled={busy} onClick={send}>{tr('Send request', 'Kirim permintaan')}</button>
+        <button className="btn btn-ghost btn-link" onClick={() => void acc.skipConsent()}>{tr('Not now, keep it on this phone', 'Nanti saja, simpan di HP ini')}</button>
+      </> : <>
+        <div style={flowTitle}>{tr('Request sent', 'Permintaan terkirim')}</div>
+        <div className={body15} style={{ lineHeight: 1.5 }}>
+          {tr(`We emailed ${parentEmail.trim()} what we store and a button to approve. Sync starts as soon as they do.`,
+            `Kami mengirim email ke ${parentEmail.trim()} berisi data apa yang disimpan dan tombol untuk menyetujui. Sinkron mulai begitu mereka setuju.`)}
+        </div>
+        <div className="grow" />
+        <button className="btn btn-primary btn-lg" onClick={() => go('home')}>{tr('Back to home', 'Kembali ke beranda')}</button>
+      </>}
+    </FlowPage>
+  );
+}
+
 // ─── First copy to (or from) the account ──────────────────────────────────────
 
 export function Upload() {
@@ -525,8 +606,8 @@ export function DeleteAccount() {
         <div className="surface" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div className="t15 w6">{tr('You have 7 days to change your mind', 'Kamu punya 7 hari untuk berubah pikiran')}</div>
           <div className="t14 pretty" style={{ lineHeight: 1.5 }}>
-            {tr(`Sign in before ${shortDate(addDays(now, 7))}, or use the link we email you, and nothing is lost. After that it's gone for good.`,
-              `Masuk sebelum ${shortDate(addDays(now, 7))}, atau pakai link yang kami kirim lewat email, dan tidak ada yang hilang. Setelah itu, semuanya hilang permanen.`)}
+            {tr(`Before ${shortDate(addDays(now, 7))}, sign in and tap Restore my account, and nothing is lost. After that it's gone for good.`,
+              `Sebelum ${shortDate(addDays(now, 7))}, masuk lalu ketuk Pulihkan akunku, dan tidak ada yang hilang. Setelah itu, semuanya hilang permanen.`)}
           </div>
         </div>
         <div className="field">
@@ -554,29 +635,29 @@ export function PrivacyText() {
       `Pocket Sense is a spending-awareness app. In this policy, "we" means the person who runs it. Contact: ${CONTACT_EMAIL}.`,
       `Pocket Sense adalah aplikasi untuk lebih sadar soal pengeluaran. Dalam kebijakan ini, "kami" berarti orang yang mengelolanya. Kontak: ${CONTACT_EMAIL}.`)],
     [tr('2. What we collect', '2. Apa yang kami kumpulkan'), tr(
-      'Without an account, everything stays on your phone and we collect nothing. With an account, we store your email address and birth year; your purchases (amount, category, wallet and time); any mood tags you add; your goal, parking lot items and cooldown timers; and your settings, including labels the app has learned from your look-backs.',
-      'Tanpa akun, semua data tetap di HP-mu dan kami tidak mengumpulkan apa pun. Dengan akun, kami menyimpan alamat email dan tahun lahirmu; pembelianmu (jumlah, kategori, dompet, dan waktu); tag mood yang kamu tambahkan; target, barang di parkiran, dan timer jeda; serta pengaturanmu, termasuk label yang dipelajari aplikasi dari tinjauanmu.')],
+      'Without an account, everything stays on your phone and we collect nothing. With an account, we store your email address, your date of birth, and when you agreed to this policy. For under-18s we also store a parent or guardian\'s email address and when they approved. We store what you log: purchases (name, amount, category, wallet and time), income and savings entries, mood tags, your look-back answers, your goal, parked items (name, price and shop link) and cooldown timers, and your settings, including labels the app has learned from your look-backs.',
+      'Tanpa akun, semua data tetap di HP-mu dan kami tidak mengumpulkan apa pun. Dengan akun, kami menyimpan alamat email, tanggal lahir, dan kapan kamu menyetujui kebijakan ini. Untuk yang di bawah 18 tahun, kami juga menyimpan alamat email orang tua atau wali dan kapan mereka menyetujui. Kami menyimpan apa yang kamu catat: pembelian (nama, jumlah, kategori, dompet, dan waktu), catatan pemasukan dan tabungan, tag mood, jawaban tinjauanmu, target, barang di parkiran (nama, harga, dan link toko) dan timer jeda, serta pengaturanmu, termasuk label yang dipelajari aplikasi dari tinjauanmu.')],
     [tr('3. Why we collect it', '3. Kenapa kami mengumpulkannya'), tr(
-      "Only to keep your data the same across your devices and to run the app's features. We don't use it for advertising and we don't sell it.",
-      'Hanya supaya datamu sama di semua perangkatmu dan untuk menjalankan fitur aplikasi. Kami tidak memakainya untuk iklan dan tidak menjualnya.')],
-    [tr("4. Where it's stored", '4. Di mana data disimpan'), tr(
-      'On servers run by Supabase, our database provider. Password-reset emails are sent through Resend, which receives only the email address and the message.',
-      'Di server milik Supabase, penyedia database kami. Email atur ulang kata sandi dikirim lewat Resend, yang hanya menerima alamat email dan isi pesannya.')],
+      "Only to keep your data the same across your devices and to run the app's features. Your date of birth is used only to check your age. We don't use any of it for advertising and we don't sell it.",
+      'Hanya supaya datamu sama di semua perangkatmu dan untuk menjalankan fitur aplikasi. Tanggal lahirmu hanya dipakai untuk memeriksa usiamu. Kami tidak memakai semuanya untuk iklan dan tidak menjualnya.')],
+    [tr("4. Where it's stored and who else sees it", '4. Di mana data disimpan dan siapa lagi yang melihatnya'), tr(
+      'Your account data is stored by Supabase, our database provider, on servers in Singapore. Emails (confirming your address, resetting your password, deleting your account and asking a parent to approve) are sent through Brevo, which receives only the email address and the message. If you choose Continue with Google, Google learns that you signed in. The website is hosted on GitHub Pages, which can see the IP address of anyone who opens it. Because of these services, your data leaves Indonesia.',
+      'Data akunmu disimpan oleh Supabase, penyedia database kami, di server di Singapura. Email (konfirmasi alamat, atur ulang kata sandi, penghapusan akun, dan permintaan persetujuan orang tua) dikirim lewat Brevo, yang hanya menerima alamat email dan isi pesannya. Kalau kamu memilih Lanjut dengan Google, Google tahu bahwa kamu masuk. Situs web ini dihosting di GitHub Pages, yang bisa melihat alamat IP siapa pun yang membukanya. Karena layanan-layanan ini, datamu keluar dari Indonesia.')],
     [tr('5. Ask (AI answers)', '5. Tanya (jawaban AI)'), tr(
-      "Ask is optional, needs an account, and is only for people 18 or older. When you send a question, it goes with a short summary of what you logged (this week's money, recent purchases with their categories and mood tags, your goal and parked items) to an AI service (NVIDIA or OpenRouter, which may pass it on to the company running the model) to write the answer. Your email and birth year are not sent. We don't keep your questions or the answers; we only count how many you ask each day, to keep within limits.",
-      'Fitur Tanya bersifat opsional, butuh akun, dan hanya untuk usia 18 tahun ke atas. Saat kamu mengirim pertanyaan, pertanyaan itu dikirim bersama ringkasan singkat dari yang kamu catat (uang minggu ini, pembelian terakhir beserta kategori dan tag mood, target, dan barang yang diparkir) ke layanan AI (NVIDIA atau OpenRouter, yang bisa meneruskannya ke perusahaan penyedia model) untuk menulis jawaban. Email dan tahun lahirmu tidak dikirim. Kami tidak menyimpan pertanyaan atau jawabanmu; kami hanya menghitung berapa banyak yang kamu tanyakan tiap hari, supaya tetap dalam batas.')],
+      "Ask is optional, needs an account, and is only for people 18 or older. When you send a question, it goes with a summary of what you logged in the last 4 weeks (this week's money, purchases with their names, categories, wallets, times and mood tags, your goal and parked items) and your last few questions and answers in that chat. They go to an AI service (NVIDIA or OpenRouter) to write the answer. Those companies, or the company running the model, may keep or use what they receive; we can't control that. Your email and date of birth are not sent. We don't store your questions or the answers in our database; we only count how many you ask each day, to keep within limits.",
+      'Fitur Tanya bersifat opsional, butuh akun, dan hanya untuk usia 18 tahun ke atas. Saat kamu mengirim pertanyaan, pertanyaan itu dikirim bersama ringkasan yang kamu catat dalam 4 minggu terakhir (uang minggu ini, pembelian beserta nama, kategori, dompet, waktu, dan tag mood, target, dan barang yang diparkir) dan beberapa pertanyaan serta jawaban terakhir di obrolan itu. Semuanya dikirim ke layanan AI (NVIDIA atau OpenRouter) untuk menulis jawaban. Perusahaan-perusahaan itu, atau perusahaan penyedia modelnya, mungkin menyimpan atau memakai apa yang mereka terima; kami tidak bisa mengendalikannya. Email dan tanggal lahirmu tidak dikirim. Kami tidak menyimpan pertanyaan atau jawabanmu di database kami; kami hanya menghitung berapa banyak yang kamu tanyakan tiap hari, supaya tetap dalam batas.')],
     [tr('6. Who can see it', '6. Siapa yang bisa melihatnya'), tr(
       'Your account is protected by your password or Google sign-in. The person who runs Pocket Sense can technically view your data in the database, and will only do so to fix a problem you report.',
       'Akunmu dilindungi kata sandi atau login Google. Pengelola Pocket Sense secara teknis bisa melihat datamu di database, dan hanya akan melakukannya untuk memperbaiki masalah yang kamu laporkan.')],
     [tr('7. Users under 18', '7. Pengguna di bawah 18 tahun'), tr(
-      "We don't ask a parent or guardian to approve accounts. Anyone can use an account to sync their data, but Ask is for 18+ only: if you're under 18, nothing is sent to Ask.",
-      'Kami tidak meminta persetujuan orang tua atau wali untuk akun. Siapa pun bisa memakai akun untuk menyinkronkan datanya, tetapi fitur Tanya khusus usia 18+: kalau kamu di bawah 18 tahun, tidak ada data yang dikirim ke fitur Tanya.')],
-    [tr('8. Signing out and deleting', '8. Keluar dan menghapus akun'), tr(
-      'Signing out clears your data from that phone; it stays in your account. You can delete your account in Settings. Deletion takes effect after 7 days, and signing in before then cancels it. After 7 days, your account and all synced data are permanently erased.',
-      'Keluar akan menghapus datamu dari HP itu; datanya tetap ada di akunmu. Kamu bisa menghapus akun di Pengaturan. Penghapusan berlaku setelah 7 hari, dan masuk sebelum itu akan membatalkannya. Setelah 7 hari, akun dan semua data yang tersinkron dihapus permanen.')],
+      "You can use Pocket Sense on your phone without an account at any age. To make an account you give your date of birth, and we work out your age from it. If you're under 18, a parent or guardian must approve by email before your purchases and other app data are stored on our server, because Indonesia's Personal Data Protection Law (UU PDP No. 27/2022) asks for parental consent for children's data. Until they approve, that data stays on your phone and we hold only your account details. Ask is never available to under-18s, and nothing is sent to it. We don't check that the date of birth is true or that the approving email belongs to a parent.",
+      'Kamu bisa memakai Pocket Sense di HP tanpa akun pada usia berapa pun. Untuk membuat akun, kamu mengisi tanggal lahir, dan kami menghitung usiamu dari tanggal itu. Kalau kamu di bawah 18 tahun, orang tua atau wali harus menyetujui lewat email sebelum pembelian dan data aplikasimu lainnya disimpan di server kami, karena UU Pelindungan Data Pribadi (UU PDP No. 27/2022) meminta persetujuan orang tua untuk data anak. Sampai mereka menyetujui, data itu tetap di HP-mu dan kami hanya menyimpan detail akunmu. Fitur Tanya tidak pernah tersedia untuk yang di bawah 18 tahun, dan tidak ada data yang dikirim ke sana. Kami tidak memeriksa apakah tanggal lahir itu benar atau apakah email yang menyetujui milik orang tua.')],
+    [tr('8. Signing out, deleting and your rights', '8. Keluar, menghapus akun, dan hakmu'), tr(
+      `Signing out clears your data from that phone; it stays in your account. You can delete your account in Settings. Deletion takes effect after 7 days: to cancel it, sign in and tap Restore my account. Within about a day after that, your account and all synced data are erased. Copies kept by our service providers, such as backups and email logs, may last a little longer. To ask for a copy of your data or to correct it, contact ${CONTACT_EMAIL}.`,
+      `Keluar akan menghapus datamu dari HP itu; datanya tetap ada di akunmu. Kamu bisa menghapus akun di Pengaturan. Penghapusan berlaku setelah 7 hari: untuk membatalkannya, masuk lalu ketuk Pulihkan akunku. Dalam sekitar satu hari sesudahnya, akun dan semua data yang tersinkron dihapus. Salinan yang disimpan penyedia layanan kami, seperti cadangan dan log email, bisa bertahan sedikit lebih lama. Untuk meminta salinan datamu atau memperbaikinya, hubungi ${CONTACT_EMAIL}.`)],
     [tr('9. Changes', '9. Perubahan'), tr(
-      "If this policy changes, we'll tell you in the app before the change applies.",
-      'Kalau kebijakan ini berubah, kami akan memberi tahu di aplikasi sebelum perubahannya berlaku.')],
+      "If this policy changes, we'll update the \"Last updated\" date above and the text on this page.",
+      'Kalau kebijakan ini berubah, kami akan memperbarui tanggal "Terakhir diperbarui" di atas dan teks di halaman ini.')],
   ];
   return (
     <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20, fontSize: 15, lineHeight: 1.55 }}>

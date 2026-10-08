@@ -109,11 +109,15 @@ describe('readAnswer', () => {
   });
 
   it('finds the JSON inside extra text or a code fence', () => {
-    expect(readAnswer('Sure!\n```json\n{"headline":"Ok","body":"Fine."}\n```', 'en')).toMatchObject({ headline: 'Ok' });
+    expect(readAnswer('Sure!\n```json\n{"on_topic":true,"headline":"Ok","body":"Fine."}\n```', 'en')).toMatchObject({ headline: 'Ok' });
   });
 
-  it('treats a missing on_topic as on topic, so models that leave it out still work', () => {
-    expect(readAnswer(json({ headline: 'Ok', body: 'Fine.' }), 'en')).toMatchObject({ headline: 'Ok' });
+  it('only accepts an explicit on_topic: true, so a reply that skips the topic check goes to the next provider', () => {
+    expect(readAnswer(json({ headline: 'Ok', body: 'Fine.' }), 'en')).toBeNull();
+    expect(readAnswer(json({ on_topic: null, headline: 'Ok', body: 'Fine.' }), 'en')).toBeNull();
+    expect(readAnswer(json({ on_topic: 1, headline: 'Ok', body: 'Fine.' }), 'en')).toBeNull();
+    expect(readAnswer(json({ on_topic: 'true', headline: 'Ok', body: 'Fine.' }), 'en')).toBeNull();
+    expect(readAnswer(json({ on_topic: true, headline: 'Ok', body: 'Fine.' }), 'en')).toMatchObject({ headline: 'Ok' });
   });
 
   it('swaps in the fixed refusal when the model says the question was off topic', () => {
@@ -137,32 +141,32 @@ describe('readAnswer', () => {
   });
 
   it('drops an item name that contains a link but keeps the answer', () => {
-    expect(readAnswer(json({ headline: 'Ok', body: 'Fine.', price: 5, item: 'see http://x.test' }), 'en')).toMatchObject({ price: 5, item: null });
+    expect(readAnswer(json({ on_topic: true, headline: 'Ok', body: 'Fine.', price: 5, item: 'see http://x.test' }), 'en')).toMatchObject({ price: 5, item: null });
   });
 
   it('keeps a plain Rupiah amount, which has dots but is not a link', () => {
-    expect(readAnswer(json({ headline: 'Ok', body: 'You spent Rp 1.250.000 on meals.' }), 'en')).toMatchObject({ body: 'You spent Rp 1.250.000 on meals.' });
+    expect(readAnswer(json({ on_topic: true, headline: 'Ok', body: 'You spent Rp 1.250.000 on meals.' }), 'en')).toMatchObject({ body: 'You spent Rp 1.250.000 on meals.' });
   });
 
   it('cuts a long body at the end of a sentence', () => {
     const body = Array.from({ length: 60 }, (_, i) => `Sentence number ${i} is here.`).join(' ');
-    const out = readAnswer(json({ headline: 'Ok', body }), 'en')!;
+    const out = readAnswer(json({ on_topic: true, headline: 'Ok', body }), 'en')!;
     expect(out.body.length).toBeLessThanOrEqual(600);
     expect(out.body.endsWith('.')).toBe(true);
   });
 
   it('cuts text with no sentence end and marks it', () => {
-    const out = readAnswer(json({ headline: 'Ok', body: 'word '.repeat(300).trim() }), 'en')!;
+    const out = readAnswer(json({ on_topic: true, headline: 'Ok', body: 'word '.repeat(300).trim() }), 'en')!;
     expect(out.body.length).toBeLessThanOrEqual(600);
     expect(out.body.endsWith('…')).toBe(true);
   });
 
   it('ignores a bad price and returns null for unreadable replies', () => {
-    expect(readAnswer(json({ headline: 'Ok', body: 'Fine.', price: -5, item: 'x' }), 'en')).toMatchObject({ price: null, item: null });
-    expect(readAnswer(json({ headline: 'Ok', body: 'Fine.', price: '5', item: 'x' }), 'en')).toMatchObject({ price: null, item: null });
+    expect(readAnswer(json({ on_topic: true, headline: 'Ok', body: 'Fine.', price: -5, item: 'x' }), 'en')).toMatchObject({ price: null, item: null });
+    expect(readAnswer(json({ on_topic: true, headline: 'Ok', body: 'Fine.', price: '5', item: 'x' }), 'en')).toMatchObject({ price: null, item: null });
     expect(readAnswer('no json here', 'en')).toBeNull();
     expect(readAnswer('{broken', 'en')).toBeNull();
-    expect(readAnswer(json({ headline: '   ', body: 'Fine.' }), 'en')).toBeNull();
-    expect(readAnswer(json({ headline: 'Ok' }), 'en')).toBeNull();
+    expect(readAnswer(json({ on_topic: true, headline: '   ', body: 'Fine.' }), 'en')).toBeNull();
+    expect(readAnswer(json({ on_topic: true, headline: 'Ok' }), 'en')).toBeNull();
   });
 });

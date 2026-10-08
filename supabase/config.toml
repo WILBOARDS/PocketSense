@@ -1,5 +1,13 @@
 # Settings the Supabase CLI uses when deploying (see docs/ACCOUNTS-SETUP.md).
 
+[functions.request-consent]
+verify_jwt = true
+
+# Parents open this from an email link and have no account, so it can't require a session.
+# The one-time token in the link is checked inside the function instead.
+[functions.approve-consent]
+verify_jwt = false
+
 [functions.delete-account]
 verify_jwt = true
 

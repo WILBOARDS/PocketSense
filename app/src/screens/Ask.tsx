@@ -39,7 +39,7 @@ export function Ask() {
   const { go, layout } = useUi();
   const signedIn = acc.enabled && acc.status === 'in';
   // The server checks this too; this just shows the reason instead of a chat that can't answer.
-  const minor = signedIn && !!acc.profile?.minor;
+  const minor = (signedIn || acc.status === 'pendingConsent') && !!acc.profile?.minor;
   if (!signedIn || minor) kept = [];
 
   return (
@@ -207,8 +207,8 @@ export function AskAbout({ onBack }: { onBack: () => void }) {
       "Only what's in Pocket Sense: this week's money and spending, your purchases from the last 4 weeks (name, category, class, amount, mood, wallet and time), your goal and your parked items. It isn't linked to your bank and can't see anything you didn't log.",
       'Hanya yang ada di Pocket Sense: uang dan pengeluaran minggu ini, pembelianmu 4 minggu terakhir (nama, kategori, kelas, jumlah, mood, dompet, dan waktu), target, dan barang yang diparkir. Tidak terhubung ke bank dan tidak bisa melihat apa pun yang tidak kamu catat.')],
     [tr('Where it goes', 'Ke mana datanya'), tr(
-      "Your question and that summary go from our server to an AI service (NVIDIA or OpenRouter), which writes the answer. Your email and birth year are never sent. We don't keep the questions or answers.",
-      'Pertanyaan dan ringkasan itu dikirim dari server kami ke layanan AI (NVIDIA atau OpenRouter) yang menulis jawabannya. Email dan tahun lahirmu tidak pernah dikirim. Kami tidak menyimpan pertanyaan maupun jawabannya.')],
+      "Your question and that summary go from our server to an AI service (NVIDIA or OpenRouter), which writes the answer. Your email and date of birth are never sent. We don't keep the questions or answers.",
+      'Pertanyaan dan ringkasan itu dikirim dari server kami ke layanan AI (NVIDIA atau OpenRouter) yang menulis jawabannya. Email dan tanggal lahirmu tidak pernah dikirim. Kami tidak menyimpan pertanyaan maupun jawabannya.')],
     [tr('It can be wrong', 'Bisa salah'), tr(
       'AI can misread a number or make something up. The "Left this week" and "After buying" figures are worked out by the app itself, not by the AI, so trust those over the text. Ask gives no investment or loan advice.',
       'AI bisa salah membaca angka atau mengarang. Angka "Sisa minggu ini" dan "Setelah beli" dihitung oleh aplikasi sendiri, bukan oleh AI, jadi lebih percayai angka itu daripada teksnya. Fitur Tanya tidak memberi saran investasi atau pinjaman.')],

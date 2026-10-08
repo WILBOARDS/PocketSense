@@ -26,14 +26,15 @@ How sure each line is:
 
 ## What the app does today
 
-- There is no parent approval (removed in PR #5). Anyone with a birth year can sync. Under 18 (by birth year only): nothing is sent to Ask, and Ask says "Ask is for 18+" (`supabase/functions/ask/index.ts`).
-- Ask sends a summary of the last 4 weeks of logged spending. It never sends the email or birth year.
+- Parent approval is back (restored 8 Oct 2026 after PR #5 removed it). Age comes from the full date of birth and today's date in Jakarta, so someone is an adult on their 18th birthday. Under 18: nothing syncs until a parent approves by email, and Ask is closed to them whatever the parent says ("Ask is for 18+", `supabase/functions/ask/index.ts`).
+- Age and the parent are self-declared. Nothing checks that the date of birth is true or that the approving email belongs to a parent: a child can type a friend's address. Whether that is enough for UU PDP Article 25 is the open question for a lawyer.
+- Ask sends a summary of the last 4 weeks of logged spending. It never sends the email or date of birth.
 - Ask is limited to the user's own money by a prompt plus checks on the answer (see `backend-status.md`, "Keeping Ask to money questions"). That helps with Google Play's rule that AI must not produce unsafe content for minors (rule 3), but it is not a guarantee.
 - The privacy text and the "About Ask" screen now say the question goes to **NVIDIA or OpenRouter** (updated 4 Oct 2026 when NVIDIA was added).
 
 ## Open decisions (yours)
 
-1. **Removing parent approval.** *Status, 5 Oct 2026: the project owner had it removed (PR #5) before this was decided, in line with "prototype first, law before real users". The legal question below is still open and must be settled before real users.* The backend doc's plan (Account.tsx split, step 1) deletes the parent-approval flow. From rules 1 and 2 as summarized above, that looks like it conflicts with the law while under-18s can still create accounts. Options: keep parent approval, or block under-18s from accounts and keep them on the local-only mode. Decide this *before* doing step 1.
+1. **Removing parent approval.** *Status, 8 Oct 2026: parent approval is restored (see "What the app does today"). The older status follows for history. 5 Oct 2026: the project owner had it removed (PR #5) before this was decided, in line with "prototype first, law before real users". The legal question below is still open and must be settled before real users.* The backend doc's plan (Account.tsx split, step 1) deletes the parent-approval flow. From rules 1 and 2 as summarized above, that looks like it conflicts with the law while under-18s can still create accounts. Options: keep parent approval, or block under-18s from accounts and keep them on the local-only mode. Decide this *before* doing step 1.
 2. **Account holder for NVIDIA and OpenRouter.** Rules 4 and 5 need an adult (of legal age of majority) as account holder. Decided 5 Oct 2026: it will be the project owner once they qualify. Until then the keys are for private testing only and must not back real users. Not checked: whether Indonesia counts 18 or 21 as the age of majority for this. I believe it differs between laws [memory], so confirm.
 3. **"AI for Germany"** was unanswered: if it means Gemini, that is ruled out (rule 6). If it means German users, that adds the GDPR (rule 8) and a German translation, which does not exist yet (the app has English and Indonesian only).
 4. **Before launch:** read NVIDIA's and OpenRouter's data-retention terms in full, and check rule 3 in Play Console.
