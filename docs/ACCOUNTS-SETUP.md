@@ -5,8 +5,8 @@ Pocket Sense works without any of this. With no Supabase settings, the app hides
 ## Already done
 
 - A Supabase project called **Pocket Sense** (free plan, Singapore).
-- The database: the first four files in [`supabase/migrations/`](../supabase/migrations/) are applied, including the daily job that erases deleted accounts and the Ask question counter (applied 4 Oct 2026). The fifth (`…_remove_parent_approval.sql`) removes parent approval and still has to be applied through the Supabase connector (not `npx supabase db push`: see item 5 of the code to-do in [`notes/backend-status.md`](notes/backend-status.md)), **after** the new `ask` function is deployed: the version deployed before parent approval was removed still reads the column that migration drops.
-- The `delete-account` and `ask` functions are deployed. Ask still needs its AI secrets: see step 6. `request-consent` and `approve-consent` were deployed earlier but no longer exist in this repo: remove them in Supabase → Edge Functions.
+- The database: the first four files in [`supabase/migrations/`](../supabase/migrations/) are applied (accounts, the daily job that erases deleted accounts, Ask's question counter). The fifth, `20261008000000_date_of_birth.sql`, replaces the birth year with a date of birth, adds the 13+ rule, the date-of-birth change rule, the parent-email rate limit and the cleanup of unfinished accounts. It is **not applied yet**: apply it through the Supabase connector (not `npx supabase db push`: see item 5 of the code to-do in [`notes/backend-status.md`](notes/backend-status.md)), then redeploy `request-consent`, `approve-consent`, `ask` and `delete-account` so they match it. **Do this before merging to `main`**: the Pages workflow publishes the app on every push to `main`, and the new app calls database functions that don't exist until the migration is applied.
+- The `delete-account`, `ask`, `request-consent` and `approve-consent` functions are deployed, but as the older versions: they read the old birth year and `delete-account` still sends through Resend. Redeploy all four after the migration. Ask still needs its AI secrets: see step 6.
 - [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml) builds the app from the GitHub secrets and publishes it to GitHub Pages on every push to `main`.
 
 ## Where the keys live (and why nothing leaks)
@@ -15,7 +15,7 @@ Pocket Sense works without any of this. With no Supabase settings, the app hides
 | --- | --- | --- |
 | Project URL (`https://<ref>.supabase.co`) | No | GitHub secret `VITE_SUPABASE_URL`, or your own `app/.env.local` |
 | Publishable key (`sb_publishable_…`) | No, it's made to be public | GitHub secret `VITE_SUPABASE_PUBLISHABLE_KEY`, or your own `app/.env.local` |
-| Resend API key (`re_…`) | **Yes** | Supabase → Edge Functions → Secrets only |
+| Brevo API key (`xkeysib-…`) | **Yes** | Supabase → Edge Functions → Secrets only |
 | NVIDIA API key (`nvapi-…`) and OpenRouter API key (`sk-or-…`) | **Yes** | Supabase → Edge Functions → Secrets only. Never in `app/.env.local` or a `VITE_` variable: those end up in the public JavaScript. |
 | `service_role` / secret key | **Yes, the most dangerous one** | Nowhere. Supabase gives it to the functions automatically. Never put it in the app, GitHub or chat. |
 
@@ -49,14 +49,20 @@ Without this, the confirm-email and password-reset links send people to the wron
 
 ### 4. Give the email functions their secrets
 
-1. Sign in at [resend.com](https://resend.com) → **API Keys → Create API key** (permission: Sending access). Copy it.
-2. Supabase → **Edge Functions → Secrets** (Manage secrets), add:
-   - `RESEND_API_KEY`: the key from Resend
-   - `EMAIL_FROM`: `Pocket Sense <onboarding@resend.dev>` for testing
-   - `APP_URL`: `https://wilboards.github.io/PocketSense/`
+All the app's own emails (parent approval, account deletion) go through [Brevo](https://www.brevo.com). Resend is no longer used.
 
-Two limits while testing:
-- **Resend** only delivers to your own email address until you verify a domain (Resend → Domains).- **Supabase's built-in email** (confirm email, password reset) only sends to members of your Supabase organization, a few per hour. That's you, so testing works. For real users, set up custom SMTP with Resend (Authentication → Emails → SMTP: host `smtp.resend.com`, port `465`, user `resend`, password = a Resend API key) once you have a verified domain.
+1. In Brevo: **SMTP & API → API keys → Generate a new API key**. Copy it (it starts `xkeysib-`).
+2. In Brevo: **Senders, domains & dedicated IPs → Senders**. The sender address must be verified there. A Gmail address is a poor choice: Gmail and Yahoo tend to reject or spam-folder mail that claims to come from their domain but is sent by someone else (from memory, not tested). Use an address on a domain you own and authenticate that domain in Brevo (its DKIM, SPF and DMARC records).
+3. Supabase → **Edge Functions → Secrets** (Manage secrets), add:
+   - `BREVO_API_KEY`: the key from step 1
+   - `EMAIL_FROM_ADDRESS`: the verified sender address from step 2
+   - `EMAIL_FROM_NAME`: optional, defaults to `Pocket Sense`
+   - `EMAIL_REPLY_TO`: optional, the contact address. When set, it's shown in every email's footer and used for replies.
+   - `APP_URL`: `https://wilboards.github.io/PocketSense/`
+   - You can delete the old `RESEND_API_KEY` and `EMAIL_FROM` secrets, but only after `delete-account` has been redeployed (it still uses them until then).
+4. Confirm-your-email and reset-password emails come from Supabase Auth itself, not from these functions. Supabase's built-in sender only mails members of your Supabase organization, a few per hour. For real users, go to Authentication → Emails → SMTP Settings and turn on custom SMTP with Brevo (host `smtp-relay.brevo.com`, port `587`; the login and the SMTP key are shown in Brevo under SMTP & API → SMTP, and the SMTP key is **not** the API key from step 1). Use the same verified sender. **The privacy policy says all these emails go through Brevo, so it is only true once this step is done.**
+
+While testing, use a second inbox you own as the "parent". It must not be an alias or a dotted variant of the child's address (me+kid@gmail.com or m.e@gmail.com count as the same inbox as me@gmail.com, and are refused).
 
 ### 5. Optional: Continue with Google
 
@@ -85,11 +91,11 @@ Copy `app/.env.example` to `app/.env.local`, fill in the two values from step 1,
 
 ## Check it works
 
-- [ ] Home shows "Sign in to use Pocket Sense on your PC". Create an account with a birth year over 18 → open the confirm link in the email → the upload screen says "All copied".
+- [ ] Home shows "Sign in to use Pocket Sense on your PC". Create an account with a date of birth that makes you over 18 → open the confirm link in the email → the upload screen says "All copied".
 - [ ] Supabase → Table Editor → `user_data` has one row.
 - [ ] Open the app in a second browser, tap "I already have an account" on the first onboarding step and sign in: the same purchases appear.
 - [ ] Turn off Wi-Fi and log something: "Offline · 1 change waiting". Turn it back on: "Synced".
-- [ ] Create a second account with a birth year under 18: it copies the data like any other account, but the Ask tab says "Ask is for 18+".
+- [ ] Create a second account with a date of birth under 18 and use **a second inbox you own** (not an alias of the first) as the parent: you get the approval email, approve it, reopen the app, and it copies the data.
 - [ ] Settings → Delete account → sign in again → "Keep your account?" → Restore.
 - [ ] Ask tab, signed in: "Can I afford Rp 189.000 earbuds?" gives an answer card with "Left this week" and "After buying". Supabase → Table Editor → `ask_usage` shows a count of 1 for today.
 
@@ -100,6 +106,6 @@ Add a new file to `supabase/migrations/` (never edit one that's already applied)
 ## Before real users sign up
 
 - Replace `[date]` and `[contact email]` in the privacy policy (`app/src/screens/Account.tsx`, `POLICY_UPDATED` and `CONTACT_EMAIL`).
-- Verify a domain in Resend and switch `EMAIL_FROM` to it, so account-deletion emails can reach any address.
-- The privacy policy follows the design. They are **not legal advice**. Ask someone who knows Indonesia's UU PDP before this becomes a real product.
+- Own a domain, authenticate it in Brevo, and switch `EMAIL_FROM_ADDRESS` to an address on it, so parents' emails arrive.
+- The privacy policy and the under-18 flow follow the design. They are **not legal advice**. Ask someone who knows Indonesia's UU PDP before this becomes a real product.
 - The goal photo is not synced. It stays on the device where you added it.

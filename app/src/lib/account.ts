@@ -2,7 +2,7 @@
 // both copies the same afterwards. Every screen reads it through useAccount().
 //
 // Rules:
-// - Nothing leaves the phone until the server says can_sync (a birth year is set and the account isn't being deleted).
+// - Nothing leaves the phone until the server says can_sync (18+, or a parent approved).
 // - The phone keeps working offline. Changes made then are counted and sent when it's back online.
 // - "Linked" means this phone has copied its data to this account at least once (meta.userId).
 import type { Session } from '@supabase/supabase-js';
@@ -10,7 +10,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { shortDate } from './dates';
 import { loadJson, saveJson } from './storage';
 import type { useStore } from './store';
-import { tr } from './i18n';
+import { getLang, tr } from './i18n';
 import { normalize } from './migrate';
 import { authMessage, isFresh, isValidData, merge, offlineMsg, syncView, type AccountStatus, type SyncView } from './sync';
 import type { Data } from './types';
@@ -18,8 +18,15 @@ import { supabase, urlAuth } from './supabase';
 import type { Screen } from '../ui';
 
 export interface Profile {
-  birth_year: number | null;
+  /** The server never sends the date itself, only whether it has one. */
+  has_birth_date: boolean;
   minor: boolean;
+  /** Under 13: no account (the app still works on the phone). */
+  too_young: boolean;
+  parent_email: string | null;
+  consent_approved: boolean;
+  /** The parent's latest answer to the current parent address was "don't approve". */
+  consent_declined: boolean;
   deletion_at: string | null;
   can_sync: boolean;
 }
@@ -43,8 +50,8 @@ interface Local {
   deletionAt: string | null;
   /** The user started signing in; finish the flow when the page comes back from Google or an email link. */
   linking: boolean;
-  /** Birth year typed before "Continue with Google" in Create account. */
-  birthYear: number | null;
+  /** Date of birth (YYYY-MM-DD) typed before "Continue with Google" in Create account. Cleared once the server has it. */
+  birthDate: string | null;
   /** The account whose data is on this phone. Another person's data is never merged into a different account. */
   ownerId: string | null;
 }
@@ -52,7 +59,7 @@ interface Local {
 const META_KEY = 'pocket-sense:sync';
 const LOCAL_KEY = 'pocket-sense:account';
 const EMPTY_META: Meta = { userId: null, rev: 0, pending: 0 };
-const EMPTY_LOCAL: Local = { promptDismissed: false, wiped: false, deletionAt: null, linking: false, birthYear: null, ownerId: null };
+const EMPTY_LOCAL: Local = { promptDismissed: false, wiped: false, deletionAt: null, linking: false, birthDate: null, ownerId: null };
 const PULL_EVERY_MS = 60_000;
 const PUSH_DELAY_MS = 1500;
 
@@ -68,17 +75,21 @@ export interface AccountValue {
   sync: SyncView & { online: boolean; pending: number };
   local: Local;
   link: LinkState | null;
-  /** Signed in with Google but no birth year yet: the sign-in screen asks for it. */
+  /** Signed in with Google but no date of birth yet: the sign-in screen asks for it. */
   finishing: boolean;
 
   dismissPrompt: () => void;
   signIn: (email: string, password: string) => Result;
-  signUp: (email: string, password: string, birthYear: number) => Result;
-  google: (birthYear: number | null) => Result;
-  finishProfile: (birthYear: number) => Result;
+  signUp: (email: string, password: string, birthDate: string) => Result;
+  google: (birthDate: string | null) => Result;
+  finishProfile: (birthDate: string) => Result;
+  /** For accounts that are already 18+: fixes a typo to another adult date. The server checks every rule. */
+  changeBirthDate: (birthDate: string) => Result;
   cancelSignIn: () => Promise<void>;
   sendReset: (email: string) => Result;
   setNewPassword: (password: string) => Result;
+  requestConsent: (parentEmail?: string) => Result;
+  skipConsent: () => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: () => Result;
   restore: () => Result;
@@ -261,7 +272,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
         rev = await pushLoop(localData, 0);
       }
       setMeta({ userId: id, rev, pending: 0 });
-      setLocal({ wiped: false, linking: false, birthYear: null, deletionAt: null, ownerId: id });
+      setLocal({ wiped: false, linking: false, birthDate: null, deletionAt: null, ownerId: id });
       setLink({ progress: 100, dir, done: true, error: null });
     } catch (e) {
       const msg = e instanceof Error && !isNetworkError(e) ? e.message : offlineMsg();
@@ -278,12 +289,19 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
     store.wipe();
     clearPhoto();
     setMeta(EMPTY_META);
-    setLocal({ wiped: true, linking: false, birthYear: null, ownerId: null, ...extra });
+    setLocal({ wiped: true, linking: false, birthDate: null, ownerId: null, ...extra });
     setProfile(null);
     setFinishing(false);
     handledUid.current = null;
     go('home');
   }, [setMeta, setLocal]);
+
+  /** Deleted on another device: this phone follows. */
+  const followDeletion = useCallback(async (at: string) => {
+    await supabase!.auth.signOut({ scope: 'local' });
+    clearPhone({ deletionAt: at });
+    deps.current.toast(tr('This account is set to be deleted. This phone is cleared.', 'Akun ini dijadwalkan untuk dihapus. HP ini sudah dikosongkan.'));
+  }, [clearPhone]);
 
   /** Decides where to go once a session exists. `interactive` means the user just signed in. */
   const afterSignIn = useCallback(async (interactive: boolean) => {
@@ -299,19 +317,14 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
 
     if (p.deletion_at) {
       if (interactive) { setLocal({ linking: false }); go('restore'); }
-      else if (isLinked()) {
-        // Deleted on another device: this phone follows.
-        await supabase!.auth.signOut({ scope: 'local' });
-        clearPhone({ deletionAt: p.deletion_at });
-        toast(tr('This account is set to be deleted. This phone is cleared.', 'Akun ini dijadwalkan untuk dihapus. HP ini sudah dikosongkan.'));
-      }
+      else if (isLinked()) await followDeletion(p.deletion_at);
       return;
     }
 
-    if (p.birth_year == null) {
-      const y = localRef.current.birthYear;
-      if (y) {
-        const { data, error } = await supabase!.rpc('set_birth_year', { p_birth_year: y });
+    if (!p.has_birth_date) {
+      const d = localRef.current.birthDate;
+      if (d) {
+        const { data, error } = await supabase!.rpc('set_date_of_birth', { p_dob: d });
         if (error) { toast(authMessage(error)); return; }
         p = data as Profile;
         setProfile(p);
@@ -321,18 +334,31 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       }
     }
 
-    // Not reachable today (a birth year is set and deletion is handled above), but never start a copy the server would refuse.
+    if (p.too_young) {
+      // The form stops this first; this is for anyone who got past it. The server erases the account within a day.
+      setLocal({ linking: false, birthDate: null });
+      await supabase!.auth.signOut({ scope: 'local' });
+      if (interactive) { go('home'); toast(tr('Accounts are for ages 13 and over. Pocket Sense still works on this phone without one.', 'Akun untuk usia 13 tahun ke atas. Pocket Sense tetap bisa dipakai di HP ini tanpa akun.')); }
+      return;
+    }
+
     if (!p.can_sync) {
-      if (interactive) setLocal({ linking: false, birthYear: null });
+      if (interactive) {
+        setLocal({ linking: false, birthDate: null });
+        if (!p.parent_email) go('consent');
+        else if (p.consent_declined) { go('home'); toast(tr("Your parent or guardian didn't approve. Pocket Sense keeps working on this phone.", 'Orang tua atau walimu tidak menyetujui. Pocket Sense tetap bekerja di HP ini.')); }
+        else { go('home'); toast(tr('Waiting for a parent to approve. Your data stays on this phone.', 'Menunggu persetujuan orang tua. Datamu tetap di HP ini.')); }
+      }
       return;
     }
 
     if (interactive || !isLinked()) {
+      if (!interactive && p.minor) toast(tr('A parent approved. Copying this phone to your account.', 'Orang tua sudah setuju. Menyalin HP ini ke akunmu.'));
       await startLink();
     } else {
       await syncNow();
     }
-  }, [fetchProfile, setLocal, startLink, syncNow, clearPhone]);
+  }, [fetchProfile, setLocal, startLink, syncNow, clearPhone, followDeletion]);
 
   // Session changes: first load, coming back from Google or an email link, signing out.
   useEffect(() => {
@@ -388,7 +414,15 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
     if (!supabase) return;
     const check = () => {
       if (document.visibilityState !== 'visible' || !sessionRef.current) return;
-      if (isLinked()) void syncNow();
+      const p = profileRef.current;
+      if (isLinked()) {
+        void syncNow();
+        // Re-read the profile, so a minor who turns 18, or an account deleted on another device, is noticed without a restart.
+        void fetchProfile().then(fresh => { if (fresh?.deletion_at && isLinked()) void followDeletion(fresh.deletion_at); }).catch(() => null);
+      } else if (!p || (!p.can_sync && p.minor && p.has_birth_date && !p.too_young)) {
+        // No profile yet (the first fetch failed offline) or still waiting on a parent: look again.
+        void afterSignIn(false);
+      }
     };
     const goOnline = () => { setOnline(true); check(); };
     const goOffline = () => setOnline(false);
@@ -407,11 +441,12 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       clearInterval(id);
       clearTimeout(pushTimer.current);
     };
-  }, [syncNow, setOnline]);
+  }, [syncNow, afterSignIn, fetchProfile, followDeletion, setOnline]);
 
   const status: AccountStatus = !supabase ? 'off'
     : !session ? 'out'
     : meta.userId === session.user.id && (!profile || profile.can_sync) ? 'in'
+    : profile && !profile.can_sync && profile.minor && !profile.too_young && profile.has_birth_date && !profile.deletion_at ? 'pendingConsent'
     : 'out';
 
   return useMemo<AccountValue>(() => {
@@ -435,40 +470,47 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       dismissPrompt: () => setLocal({ promptDismissed: true }),
 
       signIn: async (email, password) => {
-        setLocal({ linking: true, birthYear: null });
+        setLocal({ linking: true, birthDate: null });
         const { data, error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
         if (error) { setLocal({ linking: false }); return authMessage(error); }
         await signedIn(data.session);
         return null;
       },
-      signUp: async (email, password, birthYear) => {
-        setLocal({ linking: true, birthYear });
+      signUp: async (email, password, birthDate) => {
+        setLocal({ linking: true, birthDate });
         const { data, error } = await sb.auth.signUp({
           email: email.trim(), password,
-          options: { data: { birth_year: birthYear, privacy_agreed: true }, emailRedirectTo: appUrl() },
+          options: { data: { date_of_birth: birthDate, privacy_agreed: true }, emailRedirectTo: appUrl() },
         });
-        if (error) { setLocal({ linking: false, birthYear: null }); return authMessage(error); }
+        if (error) { setLocal({ linking: false, birthDate: null }); return authMessage(error); }
         // Email confirmation is on: the rest happens when they open the link.
         if (!data.session) { deps.current.go('verify'); return null; }
         await signedIn(data.session);
         return null;
       },
-      google: async birthYear => {
-        setLocal({ linking: true, birthYear });
+      google: async birthDate => {
+        setLocal({ linking: true, birthDate });
         const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: appUrl() } });
-        if (error) { setLocal({ linking: false, birthYear: null }); return authMessage(error); }
+        if (error) { setLocal({ linking: false, birthDate: null }); return authMessage(error); }
         return null; // The page now leaves for Google.
       },
-      finishProfile: async birthYear => {
-        const { error } = await sb.rpc('set_birth_year', { p_birth_year: birthYear });
+      finishProfile: async birthDate => {
+        const { error } = await sb.rpc('set_date_of_birth', { p_dob: birthDate });
         if (error) return authMessage(error);
         setFinishing(false);
         await afterSignIn(true);
         return null;
       },
+      changeBirthDate: async birthDate => {
+        const { data, error } = await sb.rpc('change_date_of_birth', { p_dob: birthDate });
+        if (error) return birthDateMessage(error);
+        setProfile(data as Profile);
+        deps.current.toast(tr('Date of birth updated.', 'Tanggal lahir diperbarui.'));
+        return null;
+      },
       cancelSignIn: async () => {
         setFinishing(false);
-        setLocal({ linking: false, birthYear: null });
+        setLocal({ linking: false, birthDate: null });
         if (sessionRef.current && !isLinked()) await sb.auth.signOut({ scope: 'local' });
       },
       sendReset: async email => {
@@ -484,18 +526,49 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
         await afterSignIn(true);
         return null;
       },
-      signOut: async () => {
+      requestConsent: async parentEmail => {
+        const { error } = await sb.functions.invoke('request-consent', { body: { lang: getLang(), ...(parentEmail ? { parentEmail: parentEmail.trim() } : {}) } });
+        if (error) return functionError(error);
+        await fetchProfile().catch(() => null);
+        return null;
+      },
+      skipConsent: async () => {
+        setLocal({ linking: false, birthDate: null });
         await sb.auth.signOut({ scope: 'local' });
-        clearPhone();
-        deps.current.toast(tr('Signed out. This phone is cleared.', 'Sudah keluar. HP ini sudah dikosongkan.'));
+        deps.current.go('home');
+        deps.current.toast(tr('Saved on this phone only. You can sign in later from Settings.', 'Disimpan di HP ini saja. Kamu bisa masuk nanti dari Pengaturan.'));
+      },
+      signOut: async () => {
+        // An account that never synced has no copy on the server, so clearing the phone would lose the only copy.
+        const linked = isLinked();
+        await sb.auth.signOut({ scope: 'local' });
+        if (linked) {
+          clearPhone();
+          deps.current.toast(tr('Signed out. This phone is cleared.', 'Sudah keluar. HP ini sudah dikosongkan.'));
+        } else {
+          setProfile(null);
+          setFinishing(false);
+          handledUid.current = null;
+          deps.current.toast(tr('Signed out. Your data stays on this phone.', 'Sudah keluar. Datamu tetap di HP ini.'));
+        }
       },
       deleteAccount: async () => {
         const { data, error } = await sb.functions.invoke('delete-account', { body: {} });
         if (error) return functionError(error);
         const at = (data as { deletionAt: string }).deletionAt;
+        const linked = isLinked();
         await sb.auth.signOut({ scope: 'local' });
-        clearPhone({ deletionAt: at });
-        deps.current.toast(tr(`Account set to be deleted on ${formatDay(at)}.`, `Akun dijadwalkan dihapus pada ${formatDay(at)}.`));
+        if (linked) {
+          clearPhone({ deletionAt: at });
+          deps.current.toast(tr(`Account set to be deleted on ${formatDay(at)}.`, `Akun dijadwalkan dihapus pada ${formatDay(at)}.`));
+        } else {
+          // Nothing was ever copied to the account, so the phone holds the only copy: keep it.
+          setLocal({ deletionAt: at, linking: false });
+          setProfile(null);
+          handledUid.current = null;
+          deps.current.go('home');
+          deps.current.toast(tr(`Account set to be deleted on ${formatDay(at)}. Your data stays on this phone.`, `Akun dijadwalkan dihapus pada ${formatDay(at)}. Datamu tetap di HP ini.`));
+        }
         return null;
       },
       restore: async () => {
@@ -516,8 +589,17 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       retryLink: () => void startLink(),
     };
   }, [status, session, profile, online, meta.pending, syncing, local, link, finishing,
-    setLocal, afterSignIn, clearPhone, startLink]);
+    setLocal, afterSignIn, fetchProfile, clearPhone, startLink]);
 }
 
 /** "Sat 3 Oct" from an ISO date. */
+/** The server's reasons for refusing a date-of-birth change, in words. */
+function birthDateMessage(err: { message?: string; status?: number; code?: string }): string {
+  const m = (err.message ?? '').toLowerCase();
+  if (m.includes('too recently')) return tr('You changed your date of birth less than 30 days ago. Try again later.', 'Kamu mengubah tanggal lahir kurang dari 30 hari lalu. Coba lagi nanti.');
+  if (m.includes('only adults')) return tr('Only accounts that are already 18 or over can change the date of birth.', 'Hanya akun yang sudah berusia 18 tahun ke atas yang bisa mengubah tanggal lahir.');
+  if (m.includes('between 18 and 120')) return tr('The new date has to make you between 18 and 120 years old.', 'Tanggal barunya harus membuatmu berusia antara 18 dan 120 tahun.');
+  return authMessage(err);
+}
+
 export const formatDay = (iso: string | null) => (iso ? shortDate(Date.parse(iso)) : '');

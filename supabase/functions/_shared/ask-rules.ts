@@ -56,7 +56,7 @@ function cut(text: string, max: number): string {
 /**
  * Pulls the JSON object out of the model's reply and checks it.
  * Returns the fixed refusal when the model says the question was off topic, and null when the reply
- * is unreadable or drifted (a link, code, an image or markup), so the next provider gets a try.
+ * is unreadable, doesn't say on_topic: true, or drifted (a link, code, an image or markup), so the next provider gets a try.
  */
 export function readAnswer(text: string, lang: string): Answer | null {
   const start = text.indexOf('{'), end = text.lastIndexOf('}');
@@ -64,6 +64,8 @@ export function readAnswer(text: string, lang: string): Answer | null {
   try {
     const v = JSON.parse(text.slice(start, end + 1));
     if (v.on_topic === false || v.on_topic === 'false') return refusal(lang);
+    // Only an explicit true counts. A reply that leaves the field out hasn't passed the topic check.
+    if (v.on_topic !== true) return null;
     if (typeof v.headline !== 'string' || typeof v.body !== 'string' || !v.headline.trim()) return null;
     if (NOT_ALLOWED.test(v.headline) || NOT_ALLOWED.test(v.body)) return null;
     const price = typeof v.price === 'number' && isFinite(v.price) && v.price > 0 ? v.price : null;

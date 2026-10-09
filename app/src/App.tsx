@@ -15,13 +15,14 @@ import { readShared } from './lib/share';
 import { loadPhoto, resizePhoto, savePhoto } from './lib/storage';
 import { useStore } from './lib/store';
 import type { Currency } from './lib/types';
-import { DeleteAccount, Forgot, NewPassword, Privacy, Restore, Settings, SignIn, Upload, Verify, type AuthForm } from './screens/Account';
+import { ChangeBirthDate, Consent, DeleteAccount, Forgot, NewPassword, Privacy, Restore, Settings, SignIn, Upload, Verify, type AuthForm } from './screens/Account';
 import { Ask, AskAbout } from './screens/Ask';
 import { Goal } from './screens/Goal';
 import { Home } from './screens/Home';
 import { Insights } from './screens/Insights';
 import { Lookback } from './screens/Lookback';
 import { GoalSetup, Onboarding } from './screens/Onboarding';
+import { ParentApprove } from './screens/ParentApprove';
 import { Parking } from './screens/Parking';
 import { Thinking } from './screens/Thinking';
 import { History } from './screens/History';
@@ -35,11 +36,13 @@ import { UiContext, useUi, type LogPrefill, type ParkPrefill, type Screen, type 
 const SHOW_PATTERN_NAMES = true;
 const TABS: Screen[] = ['home', 'transactions', 'insights', 'ask'];
 /** Screens that work before onboarding is done, e.g. signing in on a new PC. */
-const ACCOUNT_SCREENS: Screen[] = ['signin', 'forgot', 'verify', 'new-password', 'upload', 'restore', 'delete'];
+const ACCOUNT_SCREENS: Screen[] = ['signin', 'forgot', 'verify', 'new-password', 'consent', 'upload', 'restore', 'delete', 'dob'];
 /** Screens whose back button returns to wherever they were opened from. */
 const RETURNS: Screen[] = ['signin', 'privacy', 'ask-about'];
 
 const params = new URLSearchParams(window.location.search);
+/** The token from a parent's approval email link, if this page was opened from one. */
+const consentToken = () => params.get('consent');
 
 /** Something shared from a shop app's Share button (see share_target in the manifest). */
 function takeShared(): ParkPrefill | null {
@@ -60,7 +63,8 @@ export function App() {
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   /** Kept here so opening the privacy policy from Create account and coming back keeps the form. */
-  const [authForm, setAuthForm] = useState<AuthForm>({ mode: null, year: '' });
+  const [authForm, setAuthForm] = useState<AuthForm>({ mode: null, day: '', month: '', year: '' });
+  const [parentToken, setParentToken] = useState(consentToken);
   const [from, setFrom] = useState<Partial<Record<Screen, Screen>>>({});
   const [parkPrefill, setParkPrefill] = useState<ParkPrefill | null>(null);
   const [shared, setShared] = useState(takeShared);
@@ -114,6 +118,17 @@ export function App() {
   const clearPhoto = useCallback(() => { savePhoto(null); setPhotoState(null); }, []);
   const account = useAccountController(store, go, toast, clearPhoto);
 
+  // The date of birth and email typed into Create account must not wait there for the next person on this phone.
+  const emptyForm: AuthForm = { mode: null, day: '', month: '', year: '' };
+  const hadSession = useRef(false);
+  useEffect(() => {
+    const signedIn = !!account.email;
+    // Linked, or the session just ended (sign-out, 'Not now', delete): either way the typed form is no longer needed.
+    if (account.status === 'in' || (hadSession.current && !signedIn)) { setAuthForm(emptyForm); setAuthEmail(''); }
+    hadSession.current = signedIn;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account.status, account.email]);
+
   // Escape and the Android back button close the top layer first: Why sheet, then Quick log, then the screen.
   const closeTop = useCallback(() => {
     if (signOutOpen) setSignOutOpen(false);
@@ -165,6 +180,11 @@ export function App() {
     </UiContext.Provider>
   );
 
+  if (parentToken) {
+    const close = () => { history.replaceState(null, '', window.location.pathname); setParentToken(null); };
+    return wrap(<div className="app"><div className="scroll"><ParentApprove token={parentToken} onClose={close} /></div></div>);
+  }
+
   if (store.status === 'error') {
     return (
       <div className="app">
@@ -175,7 +195,8 @@ export function App() {
     );
   }
 
-  const accountScreen = ACCOUNT_SCREENS.includes(screen) && account.enabled;
+  // The privacy policy must open from Create account even before setup is done, but it keeps the tabs when opened from Settings.
+  const accountScreen = (ACCOUNT_SCREENS.includes(screen) || screen === 'privacy') && account.enabled;
   const data = store.data;
 
   if (!accountScreen && (store.status === 'new' || !data)) {
@@ -223,9 +244,11 @@ export function App() {
         {view === 'forgot' && <Forgot email={authEmail} setEmail={setAuthEmail} />}
         {view === 'verify' && <Verify email={authEmail} />}
         {view === 'new-password' && <NewPassword />}
+        {view === 'consent' && <Consent />}
         {view === 'upload' && <Upload />}
         {view === 'restore' && <Restore />}
         {view === 'delete' && <DeleteAccount />}
+        {view === 'dob' && <ChangeBirthDate />}
       </>}
     </div>
   );
@@ -236,7 +259,8 @@ export function App() {
   </>;
   const scroll = <div className="scroll" ref={scrollRef}>{screens}</div>;
   // Sign-in and the steps after it fill the window on their own, without tabs or a sidebar.
-  const bare = ACCOUNT_SCREENS.includes(view);
+  // The privacy policy opened before setup has no data behind the tabs and sidebar, which would crash, so it fills the window too.
+  const bare = ACCOUNT_SCREENS.includes(view) || (view === 'privacy' && !data);
 
   if (layout === 'half') {
     return wrap(
