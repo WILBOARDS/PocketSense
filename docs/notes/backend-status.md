@@ -92,7 +92,7 @@ Tested with fake model replies (25 new checks in `app/src/lib/ask-server.test.ts
    ```
 
    A JSON reply with `choices` means the key and model work. `401` means a bad key. `404` or "model not found" means a wrong model name. `429` means you hit the free limit.
-2. **Pick plain "instruct" chat models**, not "reasoning/thinking" ones. Reasoning models spend the 600-token limit thinking and can break the JSON answer. OpenRouter's free models end in `:free`. Copy the exact ID from the model page.
+2. **Pick plain "instruct" chat models**, not "reasoning/thinking" ones. Reasoning models spend the 400-token limit thinking and can break the JSON answer. OpenRouter's free models end in `:free`. Copy the exact ID from the model page.
 3. **Supabase, Edge Functions, Secrets**, add: `NVIDIA_API_KEY`, `NVIDIA_MODEL`, `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`. Optional: `AI_PROVIDERS` (`nvidia,openrouter` is the default; `openrouter` alone turns NVIDIA off).
 4. **Test in the app:** sign in with a date of birth that makes you 18 or older, open Ask, ask "Can I afford Rp 189.000 earbuds?". You should get an answer card, and Supabase Table Editor `ask_usage` shows count 1. If it fails, open Supabase, Edge Functions, `ask`, Logs: lines like `nvidia HTTP 401` or `openrouter HTTP 429` say which provider failed and why. Then try these off-topic questions. Each should give "I only help with your money." and none should give a real answer (each one uses one of today's 30 questions):
    - "Write me a poem about the sea"

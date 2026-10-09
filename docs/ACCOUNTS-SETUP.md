@@ -62,7 +62,7 @@ All the app's own emails (parent approval, account deletion) go through [Brevo](
    - You can delete the old `RESEND_API_KEY` and `EMAIL_FROM` secrets, but only after `delete-account` has been redeployed (it still uses them until then).
 4. Confirm-your-email and reset-password emails come from Supabase Auth itself, not from these functions. Supabase's built-in sender only mails members of your Supabase organization, a few per hour. For real users, go to Authentication → Emails → SMTP Settings and turn on custom SMTP with Brevo (host `smtp-relay.brevo.com`, port `587`; the login and the SMTP key are shown in Brevo under SMTP & API → SMTP, and the SMTP key is **not** the API key from step 1). Use the same verified sender. **The privacy policy says all these emails go through Brevo, so it is only true once this step is done.**
 
-While testing, use your own email address as the "parent".
+While testing, use a second inbox you own as the "parent". It must not be an alias or a dotted variant of the child's address (me+kid@gmail.com or m.e@gmail.com count as the same inbox as me@gmail.com, and are refused).
 
 ### 5. Optional: Continue with Google
 
@@ -95,7 +95,7 @@ Copy `app/.env.example` to `app/.env.local`, fill in the two values from step 1,
 - [ ] Supabase → Table Editor → `user_data` has one row.
 - [ ] Open the app in a second browser, tap "I already have an account" on the first onboarding step and sign in: the same purchases appear.
 - [ ] Turn off Wi-Fi and log something: "Offline · 1 change waiting". Turn it back on: "Synced".
-- [ ] Create a second account with a date of birth under 18 and use **your own email** as the parent: you get the approval email, approve it, reopen the app, and it copies the data.
+- [ ] Create a second account with a date of birth under 18 and use **a second inbox you own** (not an alias of the first) as the parent: you get the approval email, approve it, reopen the app, and it copies the data.
 - [ ] Settings → Delete account → sign in again → "Keep your account?" → Restore.
 - [ ] Ask tab, signed in: "Can I afford Rp 189.000 earbuds?" gives an answer card with "Left this week" and "After buying". Supabase → Table Editor → `ask_usage` shows a count of 1 for today.
 

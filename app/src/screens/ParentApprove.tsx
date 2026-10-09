@@ -1,6 +1,6 @@
 // The page a parent lands on from the approval email (?consent=<token>). They don't have an account.
 import { useEffect, useState } from 'react';
-import { tr } from '../lib/i18n';
+import { getLang, tr } from '../lib/i18n';
 import { supabase } from '../lib/supabase';
 import { offlineMsg } from '../lib/sync';
 import { PrivacyText } from './Account';
@@ -13,7 +13,7 @@ type View =
 
 async function call(body: Record<string, string>): Promise<{ ok: true; data: { childEmail: string } } | { ok: false; msg: string }> {
   if (!supabase) return { ok: false, msg: tr('Accounts are not set up in this copy of Pocket Sense.', 'Akun belum diatur di salinan Pocket Sense ini.') };
-  const { data, error } = await supabase.functions.invoke('approve-consent', { body });
+  const { data, error } = await supabase.functions.invoke('approve-consent', { body: { ...body, lang: getLang() } });
   if (!error) return { ok: true, data };
   const res = (error as { context?: Response }).context;
   const reply = res && typeof res.json === 'function' ? await res.json().catch(() => null) : null;

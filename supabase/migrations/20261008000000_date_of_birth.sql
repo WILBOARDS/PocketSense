@@ -6,7 +6,8 @@
 --   * can_sync() needs a date of birth, age 13+, no pending deletion, and either 18+ or a parent's approval.
 --   * Ask is 18+ only and is checked in the `ask` function, not here.
 --   * An adult can correct their date of birth, but only to another adult date, and not more than once in 30 days.
---   * Accounts that never finish sign-up (no date of birth, or under 13) are erased after a day.
+--   * Accounts that never finish sign-up (no date of birth, or under 13) are erased after a day, and accounts
+--     whose email was never confirmed and that never signed in are erased after a week.
 --   * Parent-approval emails are rate limited in the database, atomically (consent_take).
 --
 -- Parent approval itself stays as the first migration built it (profiles.parent_email,
@@ -29,6 +30,8 @@ alter table public.profiles add column if not exists dob_changed_at timestamptz;
 alter table public.consent_requests add column if not exists parent_key text;
 update public.consent_requests set parent_key = lower(parent_email) where parent_key is null;
 alter table public.consent_requests alter column parent_key set not null;
+-- Set when the email could not be sent, so an outage or a wrong Brevo setting doesn't use up anyone's daily limit.
+alter table public.consent_requests add column if not exists failed_at timestamptz;
 create index if not exists consent_requests_key_idx on public.consent_requests (parent_key, created_at desc);
 
 -- ─── rules ────────────────────────────────────────────────────────────────────
@@ -93,7 +96,7 @@ $$;
 -- ─── functions the app calls ──────────────────────────────────────────────────
 
 -- Everything the app needs to decide which screen to show after sign-in. The date itself is not returned.
--- consent_declined: the parent's latest answer to the current parent address was "don't approve".
+-- consent_declined: the parent of the address now on the profile said "don't approve" (on any of the links sent).
 create or replace function public.account_status()
 returns json language sql stable security definer set search_path = '' as $$
   select json_build_object(
@@ -102,13 +105,10 @@ returns json language sql stable security definer set search_path = '' as $$
     'too_young', public.is_too_young(p.date_of_birth),
     'parent_email', p.parent_email,
     'consent_approved', p.consent_approved_at is not null,
-    'consent_declined', coalesce((
-      select c.approved is false and c.parent_email = p.parent_email
-        from public.consent_requests c
-       where c.user_id = p.id
-       order by c.created_at desc
-       limit 1
-    ), false),
+    'consent_declined', exists (
+      select 1 from public.consent_requests c
+       where c.user_id = p.id and c.parent_email = p.parent_email and c.approved is false
+    ),
     'deletion_at', p.deletion_at,
     'can_sync', public.can_sync(p.id)
   )
@@ -179,15 +179,16 @@ begin
   select max(created_at) into last_at from public.consent_requests where user_id = p_user;
   if last_at is not null and last_at > now() - make_interval(secs => p_gap_seconds) then return 'gap'; end if;
 
+  -- Requests whose email failed to send (failed_at) don't count toward the daily limits, but they do count for the gap.
   select count(*) into n from public.consent_requests
-   where user_id = p_user and created_at > now() - interval '24 hours';
+   where user_id = p_user and failed_at is null and created_at > now() - interval '24 hours';
   if n >= p_user_limit then return 'user_limit'; end if;
 
   select count(*) into n from public.consent_requests
-   where parent_key = p_parent_key and created_at > now() - interval '24 hours';
+   where parent_key = p_parent_key and failed_at is null and created_at > now() - interval '24 hours';
   if n >= p_parent_limit then return 'parent_limit'; end if;
 
-  select count(*) into n from public.consent_requests where created_at > now() - interval '24 hours';
+  select count(*) into n from public.consent_requests where failed_at is null and created_at > now() - interval '24 hours';
   if n >= p_global_limit then return 'global_limit'; end if;
 
   insert into public.consent_requests (token_hash, user_id, parent_email, parent_key)
@@ -200,6 +201,8 @@ $$;
 
 -- "Continue with Google" creates the account before the date of birth and the agreement are asked for.
 -- If they never finish (or are under 13), the account is erased after a day. Nothing was ever synced for them.
+-- Email sign-ups that never confirmed the address and never signed in are erased after a week.
+-- Anything with synced data, or already being deleted, is left to its own rules.
 create or replace function public.erase_unfinished_accounts()
 returns int language plpgsql security definer set search_path = '' as $$
 declare
@@ -208,8 +211,12 @@ begin
   delete from auth.users u
    using public.profiles p
    where p.id = u.id
-     and p.created_at < now() - interval '1 day'
-     and (p.date_of_birth is null or public.is_too_young(p.date_of_birth));
+     and p.deletion_at is null
+     and not exists (select 1 from public.user_data d where d.user_id = u.id)
+     and (
+       (p.created_at < now() - interval '1 day' and (p.date_of_birth is null or public.is_too_young(p.date_of_birth)))
+       or (u.email_confirmed_at is null and u.last_sign_in_at is null and p.created_at < now() - interval '7 days')
+     );
   get diagnostics n = row_count;
   return n;
 end;

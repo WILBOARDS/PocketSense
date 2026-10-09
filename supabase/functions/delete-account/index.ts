@@ -20,7 +20,11 @@ serve(async req => {
         `You asked to delete your Pocket Sense account. It will be erased on ${shortDate(deletionAt)}, together with everything synced to it.`,
         'Changed your mind? Before then, sign in and tap "Restore my account". Everything synced to your account is kept. Your goal photo is only stored on your phone, so signing out or deleting removes it from that phone.',
         "If you didn't ask for this, sign in and restore your account, then change your password.",
-      ], { label: 'Open Pocket Sense', url: appLink() });
+        '— Bahasa Indonesia —',
+        `Kamu meminta untuk menghapus akun Pocket Sense-mu. Akun akan dihapus pada ${shortDate(deletionAt)}, bersama semua yang tersinkron ke akun itu.`,
+        'Berubah pikiran? Sebelum tanggal itu, masuk lalu ketuk "Pulihkan akunku". Semua yang tersinkron ke akunmu tetap ada. Foto targetmu hanya tersimpan di HP-mu, jadi keluar atau menghapus akun akan menghapusnya dari HP itu.',
+        'Kalau bukan kamu yang memintanya, masuk dan pulihkan akunmu, lalu ganti kata sandimu.',
+      ], { label: 'Open Pocket Sense / Buka Pocket Sense', url: appLink() });
     } catch (e) {
       // The deletion is still scheduled; the email is only a reminder.
       console.error(e);

@@ -448,6 +448,7 @@ export function Verify({ email }: { email: string }) {
 /** Opened from the reset link in the email. */
 export function NewPassword() {
   const acc = useAccount();
+  const { go } = useUi();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -462,7 +463,7 @@ export function NewPassword() {
 
   return (
     <div className="screen-fill">
-      <BackBar title={tr('Reset password', 'Atur ulang kata sandi')} onBack={() => void acc.cancelSignIn()} />
+      <BackBar title={tr('Reset password', 'Atur ulang kata sandi')} onBack={() => { void acc.cancelSignIn(); go('home'); }} />
       <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div className="t15" style={{ lineHeight: 1.5 }}>{tr(`Choose a new password for ${acc.email}.`, `Pilih kata sandi baru untuk ${acc.email}.`)}</div>
         <div className="field">
@@ -516,9 +517,12 @@ export function Consent() {
         <ErrorLine msg={error} />
         <div className="grow" />
         <button className="btn btn-primary btn-lg" disabled={busy} onClick={send}>{tr('Send request', 'Kirim permintaan')}</button>
-        {acc.profile?.parent_email
-          ? <button className="btn btn-ghost btn-link" onClick={() => go('settings')}>{tr('Back', 'Kembali')}</button>
-          : <button className="btn btn-ghost btn-link" onClick={() => void acc.skipConsent()}>{tr('Not now, keep it on this phone', 'Nanti saja, simpan di HP ini')}</button>}
+        {acc.status === 'pendingConsent' && (
+          <button className="btn btn-ghost btn-link" onClick={() => go('settings')}>{tr('Back', 'Kembali')}</button>
+        )}
+        {!acc.profile?.parent_email && (
+          <button className="btn btn-ghost btn-link" onClick={() => void acc.skipConsent()}>{tr('Not now, sign out and keep it on this phone', 'Nanti saja, keluar dan simpan di HP ini')}</button>
+        )}
       </> : <>
         <div style={flowTitle}>{tr('Request sent', 'Permintaan terkirim')}</div>
         <div className={body15} style={{ lineHeight: 1.5 }}>
@@ -738,8 +742,8 @@ export function PrivacyText() {
       "You can use Pocket Sense on your phone without an account at any age. Accounts are for people 13 and over. To make one you give your date of birth, and we work out your age from it. If you're under 18, a parent or guardian must approve by email before your purchases and other app data are stored on our server, because Indonesia's Personal Data Protection Law (UU PDP No. 27/2022) asks for parental consent for children's data. Until they approve, that data stays on your phone and we hold only your account details. Ask is never available to under-18s, and nothing is sent to it. We don't check that the date of birth is true or that the approving email belongs to a parent.",
       'Kamu bisa memakai Pocket Sense di HP tanpa akun pada usia berapa pun. Akun untuk usia 13 tahun ke atas. Untuk membuatnya kamu mengisi tanggal lahir, dan kami menghitung usiamu dari tanggal itu. Kalau kamu di bawah 18 tahun, orang tua atau wali harus menyetujui lewat email sebelum pembelian dan data aplikasimu lainnya disimpan di server kami, karena UU Pelindungan Data Pribadi (UU PDP No. 27/2022) meminta persetujuan orang tua untuk data anak. Sampai mereka menyetujui, data itu tetap di HP-mu dan kami hanya menyimpan detail akunmu. Fitur Tanya tidak pernah tersedia untuk yang di bawah 18 tahun, dan tidak ada data yang dikirim ke sana. Kami tidak memeriksa apakah tanggal lahir itu benar atau apakah email yang menyetujui milik orang tua.')],
     [tr('8. Signing out, deleting and your rights', '8. Keluar, menghapus akun, dan hakmu'), tr(
-      `Signing out clears your data from that phone; it stays in your account. The exception is your goal photo, which is only stored on your phone and is removed from it. You can delete your account in Settings. Deletion takes effect after 7 days: to cancel it, sign in and tap Restore my account. Within about a day after that, your account and all synced data are erased. If you start creating an account (for example with Google) and don't finish, it is erased after about a day. Copies kept by our service providers, such as backups and email logs, may last a little longer. Adults can correct their date of birth in Settings, once every 30 days; under-18s can't change it. To ask for a copy of your data or to correct it, contact ${CONTACT_EMAIL}.`,
-      `Keluar akan menghapus datamu dari HP itu; datanya tetap ada di akunmu. Pengecualiannya foto targetmu, yang hanya tersimpan di HP-mu dan ikut dihapus dari sana. Kamu bisa menghapus akun di Pengaturan. Penghapusan berlaku setelah 7 hari: untuk membatalkannya, masuk lalu ketuk Pulihkan akunku. Dalam sekitar satu hari sesudahnya, akun dan semua data yang tersinkron dihapus. Kalau kamu mulai membuat akun (misalnya dengan Google) dan tidak menyelesaikannya, akun itu dihapus setelah sekitar satu hari. Salinan yang disimpan penyedia layanan kami, seperti cadangan dan log email, bisa bertahan sedikit lebih lama. Orang dewasa bisa memperbaiki tanggal lahirnya di Pengaturan, sekali setiap 30 hari; yang di bawah 18 tahun tidak bisa mengubahnya. Untuk meminta salinan datamu atau memperbaikinya, hubungi ${CONTACT_EMAIL}.`)],
+      `Signing out clears your data from that phone; it stays in your account. The exception is your goal photo, which is only stored on your phone and is removed from it. If nothing was ever copied to your account (for example while a parent has not approved), signing out or deleting keeps your data and photo on the phone. You can delete your account in Settings. Deletion takes effect after 7 days: to cancel it, sign in and tap Restore my account. Within about a day after that, your account and all synced data are erased. If you start creating an account (for example with Google) and don't finish, it is erased after about a day; if you never confirm your email, after about a week. Copies kept by our service providers, such as backups and email logs, may last a little longer. Adults can correct their date of birth in Settings, once every 30 days; under-18s can't change it. To ask for a copy of your data or to correct it, contact ${CONTACT_EMAIL}.`,
+      `Keluar akan menghapus datamu dari HP itu; datanya tetap ada di akunmu. Pengecualiannya foto targetmu, yang hanya tersimpan di HP-mu dan ikut dihapus dari sana. Kalau belum ada yang pernah disalin ke akunmu (misalnya selama orang tua belum menyetujui), keluar atau menghapus akun tetap menyimpan data dan fotomu di HP. Kamu bisa menghapus akun di Pengaturan. Penghapusan berlaku setelah 7 hari: untuk membatalkannya, masuk lalu ketuk Pulihkan akunku. Dalam sekitar satu hari sesudahnya, akun dan semua data yang tersinkron dihapus. Kalau kamu mulai membuat akun (misalnya dengan Google) dan tidak menyelesaikannya, akun itu dihapus setelah sekitar satu hari; kalau kamu tidak pernah mengonfirmasi emailmu, setelah sekitar satu minggu. Salinan yang disimpan penyedia layanan kami, seperti cadangan dan log email, bisa bertahan sedikit lebih lama. Orang dewasa bisa memperbaiki tanggal lahirnya di Pengaturan, sekali setiap 30 hari; yang di bawah 18 tahun tidak bisa mengubahnya. Untuk meminta salinan datamu atau memperbaikinya, hubungi ${CONTACT_EMAIL}.`)],
     [tr('9. Changes', '9. Perubahan'), tr(
       "If this policy changes, we'll update the \"Last updated\" date above and the text on this page.",
       'Kalau kebijakan ini berubah, kami akan memperbarui tanggal "Terakhir diperbarui" di atas dan teks di halaman ini.')],

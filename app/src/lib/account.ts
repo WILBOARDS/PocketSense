@@ -10,7 +10,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { shortDate } from './dates';
 import { loadJson, saveJson } from './storage';
 import type { useStore } from './store';
-import { tr } from './i18n';
+import { getLang, tr } from './i18n';
 import { normalize } from './migrate';
 import { authMessage, isFresh, isValidData, merge, offlineMsg, syncView, type AccountStatus, type SyncView } from './sync';
 import type { Data } from './types';
@@ -296,6 +296,13 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
     go('home');
   }, [setMeta, setLocal]);
 
+  /** Deleted on another device: this phone follows. */
+  const followDeletion = useCallback(async (at: string) => {
+    await supabase!.auth.signOut({ scope: 'local' });
+    clearPhone({ deletionAt: at });
+    deps.current.toast(tr('This account is set to be deleted. This phone is cleared.', 'Akun ini dijadwalkan untuk dihapus. HP ini sudah dikosongkan.'));
+  }, [clearPhone]);
+
   /** Decides where to go once a session exists. `interactive` means the user just signed in. */
   const afterSignIn = useCallback(async (interactive: boolean) => {
     const { go, toast } = deps.current;
@@ -310,12 +317,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
 
     if (p.deletion_at) {
       if (interactive) { setLocal({ linking: false }); go('restore'); }
-      else if (isLinked()) {
-        // Deleted on another device: this phone follows.
-        await supabase!.auth.signOut({ scope: 'local' });
-        clearPhone({ deletionAt: p.deletion_at });
-        toast(tr('This account is set to be deleted. This phone is cleared.', 'Akun ini dijadwalkan untuk dihapus. HP ini sudah dikosongkan.'));
-      }
+      else if (isLinked()) await followDeletion(p.deletion_at);
       return;
     }
 
@@ -344,6 +346,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       if (interactive) {
         setLocal({ linking: false, birthDate: null });
         if (!p.parent_email) go('consent');
+        else if (p.consent_declined) { go('home'); toast(tr("Your parent or guardian didn't approve. Pocket Sense keeps working on this phone.", 'Orang tua atau walimu tidak menyetujui. Pocket Sense tetap bekerja di HP ini.')); }
         else { go('home'); toast(tr('Waiting for a parent to approve. Your data stays on this phone.', 'Menunggu persetujuan orang tua. Datamu tetap di HP ini.')); }
       }
       return;
@@ -355,7 +358,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
     } else {
       await syncNow();
     }
-  }, [fetchProfile, setLocal, startLink, syncNow, clearPhone]);
+  }, [fetchProfile, setLocal, startLink, syncNow, clearPhone, followDeletion]);
 
   // Session changes: first load, coming back from Google or an email link, signing out.
   useEffect(() => {
@@ -414,8 +417,8 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       const p = profileRef.current;
       if (isLinked()) {
         void syncNow();
-        // A minor who turns 18 (or whose profile changed elsewhere) should not have to restart the app.
-        if (p?.minor) void fetchProfile().catch(() => null);
+        // Re-read the profile, so a minor who turns 18, or an account deleted on another device, is noticed without a restart.
+        void fetchProfile().then(fresh => { if (fresh?.deletion_at && isLinked()) void followDeletion(fresh.deletion_at); }).catch(() => null);
       } else if (!p || (!p.can_sync && p.minor && p.has_birth_date && !p.too_young)) {
         // No profile yet (the first fetch failed offline) or still waiting on a parent: look again.
         void afterSignIn(false);
@@ -438,7 +441,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       clearInterval(id);
       clearTimeout(pushTimer.current);
     };
-  }, [syncNow, afterSignIn, fetchProfile, setOnline]);
+  }, [syncNow, afterSignIn, fetchProfile, followDeletion, setOnline]);
 
   const status: AccountStatus = !supabase ? 'off'
     : !session ? 'out'
@@ -524,7 +527,7 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
         return null;
       },
       requestConsent: async parentEmail => {
-        const { error } = await sb.functions.invoke('request-consent', { body: parentEmail ? { parentEmail: parentEmail.trim() } : {} });
+        const { error } = await sb.functions.invoke('request-consent', { body: { lang: getLang(), ...(parentEmail ? { parentEmail: parentEmail.trim() } : {}) } });
         if (error) return functionError(error);
         await fetchProfile().catch(() => null);
         return null;

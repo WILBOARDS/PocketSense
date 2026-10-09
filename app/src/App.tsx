@@ -120,10 +120,14 @@ export function App() {
 
   // The date of birth and email typed into Create account must not wait there for the next person on this phone.
   const emptyForm: AuthForm = { mode: null, day: '', month: '', year: '' };
+  const hadSession = useRef(false);
   useEffect(() => {
-    if (account.status === 'in' || (account.status === 'out' && account.local.wiped)) { setAuthForm(emptyForm); setAuthEmail(''); }
+    const signedIn = !!account.email;
+    // Linked, or the session just ended (sign-out, 'Not now', delete): either way the typed form is no longer needed.
+    if (account.status === 'in' || (hadSession.current && !signedIn)) { setAuthForm(emptyForm); setAuthEmail(''); }
+    hadSession.current = signedIn;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [account.status, account.local.wiped]);
+  }, [account.status, account.email]);
 
   // Escape and the Android back button close the top layer first: Why sheet, then Quick log, then the screen.
   const closeTop = useCallback(() => {
@@ -255,7 +259,8 @@ export function App() {
   </>;
   const scroll = <div className="scroll" ref={scrollRef}>{screens}</div>;
   // Sign-in and the steps after it fill the window on their own, without tabs or a sidebar.
-  const bare = ACCOUNT_SCREENS.includes(view);
+  // The privacy policy opened before setup has no data behind the tabs and sidebar, which would crash, so it fills the window too.
+  const bare = ACCOUNT_SCREENS.includes(view) || (view === 'privacy' && !data);
 
   if (layout === 'half') {
     return wrap(
