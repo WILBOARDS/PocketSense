@@ -2,7 +2,7 @@
 // doesn't need a session: the token from the email link is the proof.
 // POST { token }                      → { childEmail, parentEmail } to show on the page
 // POST { token, decision: 'approve' } → marks the child's profile approved
-// POST { token, decision: 'decline' } → uses up the link, stores nothing
+// POST { token, decision: 'decline' } → uses up the link and records the "no"; approves nothing
 import { admin, fail, json, serve, sha256 } from '../_shared/util.ts';
 
 const LINK_DAYS = 14;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as server from '../../../supabase/functions/_shared/age';
-import { ageOn, isMinorOn, parseBirthDate, todayJakarta } from './age';
+import { ageOn, isMinorOn, isTooYoungOn, parseBirthDate, todayJakarta } from './age';
 
 describe('age from the full date', () => {
   it('turns 18 on the birthday, not on 1 January', () => {
@@ -34,6 +34,16 @@ describe('age from the full date', () => {
       for (const b of births) expect(isMinorOn(b, today), `${b} on ${today}`).toBe(server.isMinorOn(b, today));
     }
     expect(todayJakarta(new Date('2026-06-01T20:00:00Z'))).toBe(server.todayJakarta(new Date('2026-06-01T20:00:00Z')));
+  });
+
+  it('accounts start at 13, and the two copies agree', () => {
+    expect(isTooYoungOn('2013-10-09', '2026-10-08')).toBe(true);
+    expect(isTooYoungOn('2013-10-08', '2026-10-08')).toBe(false);
+    expect(isTooYoungOn(null, '2026-10-08')).toBe(false);
+    for (let t = Date.UTC(2026, 0, 1); t < Date.UTC(2027, 0, 1); t += 86_400_000) {
+      const today = new Date(t).toISOString().slice(0, 10);
+      for (const b of ['2013-01-01', '2013-02-28', '2013-12-31', '2012-06-15']) expect(isTooYoungOn(b, today), `${b} on ${today}`).toBe(server.isTooYoungOn(b, today));
+    }
   });
 });
 

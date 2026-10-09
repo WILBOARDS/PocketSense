@@ -15,7 +15,7 @@ import { readShared } from './lib/share';
 import { loadPhoto, resizePhoto, savePhoto } from './lib/storage';
 import { useStore } from './lib/store';
 import type { Currency } from './lib/types';
-import { Consent, DeleteAccount, Forgot, NewPassword, Privacy, Restore, Settings, SignIn, Upload, Verify, type AuthForm } from './screens/Account';
+import { ChangeBirthDate, Consent, DeleteAccount, Forgot, NewPassword, Privacy, Restore, Settings, SignIn, Upload, Verify, type AuthForm } from './screens/Account';
 import { Ask, AskAbout } from './screens/Ask';
 import { Goal } from './screens/Goal';
 import { Home } from './screens/Home';
@@ -36,7 +36,7 @@ import { UiContext, useUi, type LogPrefill, type ParkPrefill, type Screen, type 
 const SHOW_PATTERN_NAMES = true;
 const TABS: Screen[] = ['home', 'transactions', 'insights', 'ask'];
 /** Screens that work before onboarding is done, e.g. signing in on a new PC. */
-const ACCOUNT_SCREENS: Screen[] = ['signin', 'forgot', 'verify', 'new-password', 'consent', 'upload', 'restore', 'delete'];
+const ACCOUNT_SCREENS: Screen[] = ['signin', 'forgot', 'verify', 'new-password', 'consent', 'upload', 'restore', 'delete', 'dob'];
 /** Screens whose back button returns to wherever they were opened from. */
 const RETURNS: Screen[] = ['signin', 'privacy', 'ask-about'];
 
@@ -118,6 +118,13 @@ export function App() {
   const clearPhoto = useCallback(() => { savePhoto(null); setPhotoState(null); }, []);
   const account = useAccountController(store, go, toast, clearPhoto);
 
+  // The date of birth and email typed into Create account must not wait there for the next person on this phone.
+  const emptyForm: AuthForm = { mode: null, day: '', month: '', year: '' };
+  useEffect(() => {
+    if (account.status === 'in' || (account.status === 'out' && account.local.wiped)) { setAuthForm(emptyForm); setAuthEmail(''); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account.status, account.local.wiped]);
+
   // Escape and the Android back button close the top layer first: Why sheet, then Quick log, then the screen.
   const closeTop = useCallback(() => {
     if (signOutOpen) setSignOutOpen(false);
@@ -184,7 +191,8 @@ export function App() {
     );
   }
 
-  const accountScreen = ACCOUNT_SCREENS.includes(screen) && account.enabled;
+  // The privacy policy must open from Create account even before setup is done, but it keeps the tabs when opened from Settings.
+  const accountScreen = (ACCOUNT_SCREENS.includes(screen) || screen === 'privacy') && account.enabled;
   const data = store.data;
 
   if (!accountScreen && (store.status === 'new' || !data)) {
@@ -236,6 +244,7 @@ export function App() {
         {view === 'upload' && <Upload />}
         {view === 'restore' && <Restore />}
         {view === 'delete' && <DeleteAccount />}
+        {view === 'dob' && <ChangeBirthDate />}
       </>}
     </div>
   );

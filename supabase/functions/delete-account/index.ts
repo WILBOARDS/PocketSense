@@ -18,7 +18,7 @@ serve(async req => {
     try {
       await sendEmail(user.email, 'Your Pocket Sense account will be deleted', [
         `You asked to delete your Pocket Sense account. It will be erased on ${shortDate(deletionAt)}, together with everything synced to it.`,
-        'Changed your mind? Sign in before then and choose "Restore my account". Nothing will be lost.',
+        'Changed your mind? Before then, sign in and tap "Restore my account". Everything synced to your account is kept. Your goal photo is only stored on your phone, so signing out or deleting removes it from that phone.',
         "If you didn't ask for this, sign in and restore your account, then change your password.",
       ], { label: 'Open Pocket Sense', url: appLink() });
     } catch (e) {

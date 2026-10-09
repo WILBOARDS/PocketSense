@@ -21,8 +21,12 @@ export interface Profile {
   /** The server never sends the date itself, only whether it has one. */
   has_birth_date: boolean;
   minor: boolean;
+  /** Under 13: no account (the app still works on the phone). */
+  too_young: boolean;
   parent_email: string | null;
   consent_approved: boolean;
+  /** The parent's latest answer to the current parent address was "don't approve". */
+  consent_declined: boolean;
   deletion_at: string | null;
   can_sync: boolean;
 }
@@ -79,6 +83,8 @@ export interface AccountValue {
   signUp: (email: string, password: string, birthDate: string) => Result;
   google: (birthDate: string | null) => Result;
   finishProfile: (birthDate: string) => Result;
+  /** For accounts that are already 18+: fixes a typo to another adult date. The server checks every rule. */
+  changeBirthDate: (birthDate: string) => Result;
   cancelSignIn: () => Promise<void>;
   sendReset: (email: string) => Result;
   setNewPassword: (password: string) => Result;
@@ -326,6 +332,14 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       }
     }
 
+    if (p.too_young) {
+      // The form stops this first; this is for anyone who got past it. The server erases the account within a day.
+      setLocal({ linking: false, birthDate: null });
+      await supabase!.auth.signOut({ scope: 'local' });
+      if (interactive) { go('home'); toast(tr('Accounts are for ages 13 and over. Pocket Sense still works on this phone without one.', 'Akun untuk usia 13 tahun ke atas. Pocket Sense tetap bisa dipakai di HP ini tanpa akun.')); }
+      return;
+    }
+
     if (!p.can_sync) {
       if (interactive) {
         setLocal({ linking: false, birthDate: null });
@@ -397,8 +411,15 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
     if (!supabase) return;
     const check = () => {
       if (document.visibilityState !== 'visible' || !sessionRef.current) return;
-      if (isLinked()) void syncNow();
-      else if (profileRef.current && !profileRef.current.can_sync && profileRef.current.parent_email) void afterSignIn(false);
+      const p = profileRef.current;
+      if (isLinked()) {
+        void syncNow();
+        // A minor who turns 18 (or whose profile changed elsewhere) should not have to restart the app.
+        if (p?.minor) void fetchProfile().catch(() => null);
+      } else if (!p || (!p.can_sync && p.minor && p.has_birth_date && !p.too_young)) {
+        // No profile yet (the first fetch failed offline) or still waiting on a parent: look again.
+        void afterSignIn(false);
+      }
     };
     const goOnline = () => { setOnline(true); check(); };
     const goOffline = () => setOnline(false);
@@ -417,12 +438,12 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
       clearInterval(id);
       clearTimeout(pushTimer.current);
     };
-  }, [syncNow, afterSignIn, setOnline]);
+  }, [syncNow, afterSignIn, fetchProfile, setOnline]);
 
   const status: AccountStatus = !supabase ? 'off'
     : !session ? 'out'
     : meta.userId === session.user.id && (!profile || profile.can_sync) ? 'in'
-    : profile && !profile.can_sync && profile.minor && profile.parent_email && profile.has_birth_date && !profile.deletion_at ? 'pendingConsent'
+    : profile && !profile.can_sync && profile.minor && !profile.too_young && profile.has_birth_date && !profile.deletion_at ? 'pendingConsent'
     : 'out';
 
   return useMemo<AccountValue>(() => {
@@ -477,6 +498,13 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
         await afterSignIn(true);
         return null;
       },
+      changeBirthDate: async birthDate => {
+        const { data, error } = await sb.rpc('change_date_of_birth', { p_dob: birthDate });
+        if (error) return birthDateMessage(error);
+        setProfile(data as Profile);
+        deps.current.toast(tr('Date of birth updated.', 'Tanggal lahir diperbarui.'));
+        return null;
+      },
       cancelSignIn: async () => {
         setFinishing(false);
         setLocal({ linking: false, birthDate: null });
@@ -508,17 +536,36 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
         deps.current.toast(tr('Saved on this phone only. You can sign in later from Settings.', 'Disimpan di HP ini saja. Kamu bisa masuk nanti dari Pengaturan.'));
       },
       signOut: async () => {
+        // An account that never synced has no copy on the server, so clearing the phone would lose the only copy.
+        const linked = isLinked();
         await sb.auth.signOut({ scope: 'local' });
-        clearPhone();
-        deps.current.toast(tr('Signed out. This phone is cleared.', 'Sudah keluar. HP ini sudah dikosongkan.'));
+        if (linked) {
+          clearPhone();
+          deps.current.toast(tr('Signed out. This phone is cleared.', 'Sudah keluar. HP ini sudah dikosongkan.'));
+        } else {
+          setProfile(null);
+          setFinishing(false);
+          handledUid.current = null;
+          deps.current.toast(tr('Signed out. Your data stays on this phone.', 'Sudah keluar. Datamu tetap di HP ini.'));
+        }
       },
       deleteAccount: async () => {
         const { data, error } = await sb.functions.invoke('delete-account', { body: {} });
         if (error) return functionError(error);
         const at = (data as { deletionAt: string }).deletionAt;
+        const linked = isLinked();
         await sb.auth.signOut({ scope: 'local' });
-        clearPhone({ deletionAt: at });
-        deps.current.toast(tr(`Account set to be deleted on ${formatDay(at)}.`, `Akun dijadwalkan dihapus pada ${formatDay(at)}.`));
+        if (linked) {
+          clearPhone({ deletionAt: at });
+          deps.current.toast(tr(`Account set to be deleted on ${formatDay(at)}.`, `Akun dijadwalkan dihapus pada ${formatDay(at)}.`));
+        } else {
+          // Nothing was ever copied to the account, so the phone holds the only copy: keep it.
+          setLocal({ deletionAt: at, linking: false });
+          setProfile(null);
+          handledUid.current = null;
+          deps.current.go('home');
+          deps.current.toast(tr(`Account set to be deleted on ${formatDay(at)}. Your data stays on this phone.`, `Akun dijadwalkan dihapus pada ${formatDay(at)}. Datamu tetap di HP ini.`));
+        }
         return null;
       },
       restore: async () => {
@@ -543,4 +590,13 @@ export function useAccountController(store: Store, go: (s: Screen) => void, toas
 }
 
 /** "Sat 3 Oct" from an ISO date. */
+/** The server's reasons for refusing a date-of-birth change, in words. */
+function birthDateMessage(err: { message?: string; status?: number; code?: string }): string {
+  const m = (err.message ?? '').toLowerCase();
+  if (m.includes('too recently')) return tr('You changed your date of birth less than 30 days ago. Try again later.', 'Kamu mengubah tanggal lahir kurang dari 30 hari lalu. Coba lagi nanti.');
+  if (m.includes('only adults')) return tr('Only accounts that are already 18 or over can change the date of birth.', 'Hanya akun yang sudah berusia 18 tahun ke atas yang bisa mengubah tanggal lahir.');
+  if (m.includes('between 18 and 120')) return tr('The new date has to make you between 18 and 120 years old.', 'Tanggal barunya harus membuatmu berusia antara 18 dan 120 tahun.');
+  return authMessage(err);
+}
+
 export const formatDay = (iso: string | null) => (iso ? shortDate(Date.parse(iso)) : '');

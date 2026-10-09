@@ -83,7 +83,7 @@ export function serve(handler: (req: Request) => Promise<Response>) {
   });
 }
 
-/** Formats a date like the app does: "Sat 3 Oct". */
+/** Formats a date like the app does: "Sat 3 Oct", in Jakarta time. */
 export function shortDate(d: Date): string {
-  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).replace(',', '');
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' }).replace(',', '');
 }

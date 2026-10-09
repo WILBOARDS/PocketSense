@@ -17,8 +17,11 @@ export function SignOutSheet({ onClose }: { onClose: () => void }) {
       <div className="sheet" role="dialog" aria-modal="true" aria-label={tr('Sign out of Pocket Sense?', 'Keluar dari Pocket Sense?')} style={{ padding: '20px 20px 24px', gap: 12 }}>
         <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.1 }}>{tr('Sign out of Pocket Sense?', 'Keluar dari Pocket Sense?')}</div>
         <div className="t15 pretty" style={{ lineHeight: 1.5 }}>
-          {tr('Signing out clears this phone, so the next person never sees your data. Everything stays in your account.',
-            'Keluar akan menghapus data di HP ini, jadi orang lain tidak melihat datamu. Semuanya tetap ada di akunmu.')}
+          {acc.status === 'pendingConsent'
+            ? tr('Nothing has been copied to your account yet, so signing out keeps your data on this phone.',
+              'Belum ada yang disalin ke akunmu, jadi keluar tetap menyimpan datamu di HP ini.')
+            : tr('Signing out clears this phone, so the next person never sees your data. Everything synced stays in your account. Your goal photo does not: it is only stored on this phone.',
+              'Keluar akan menghapus data di HP ini, jadi orang lain tidak melihat datamu. Semua yang tersinkron tetap ada di akunmu. Foto targetmu tidak: foto itu hanya tersimpan di HP ini.')}
         </div>
         {unsynced && (
           <div role="alert" className="t14 w6" style={{ background: 'var(--color-accent-100)', color: 'var(--color-accent-800)', padding: '12px 14px', lineHeight: 1.45 }}>{unsynced}</div>

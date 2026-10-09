@@ -7,6 +7,7 @@
 
 const ZONE = 'Asia/Jakarta';
 const ADULT_AGE = 18;
+const MIN_ACCOUNT_AGE = 13;
 const OLDEST = 120;
 
 /** Today in Jakarta as YYYY-MM-DD. */
@@ -24,6 +25,11 @@ export function ageOn(dob: string, today: string): number {
 /** Under 18 today. No date of birth counts as under 18, the safe side. */
 export function isMinorOn(dob: string | null, today: string = todayJakarta()): boolean {
   return dob == null || ageOn(dob, today) < ADULT_AGE;
+}
+
+/** Under the minimum age for an account (13). No date is not "too young": it is "not finished". */
+export function isTooYoungOn(dob: string | null, today: string = todayJakarta()): boolean {
+  return dob != null && ageOn(dob, today) < MIN_ACCOUNT_AGE;
 }
 
 export type BirthDate = { ok: true; iso: string } | { ok: false };

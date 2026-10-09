@@ -5,8 +5,8 @@ Pocket Sense works without any of this. With no Supabase settings, the app hides
 ## Already done
 
 - A Supabase project called **Pocket Sense** (free plan, Singapore).
-- The database: the first four files in [`supabase/migrations/`](../supabase/migrations/) are applied (accounts, the daily job that erases deleted accounts, Ask's question counter). The fifth, `…_parent_approval_and_dob.sql`, restores parent approval and replaces the birth year with a date of birth. It is **not applied yet**: apply it through the Supabase connector (not `npx supabase db push`: see item 5 of the code to-do in [`notes/backend-status.md`](notes/backend-status.md)), then redeploy `request-consent`, `approve-consent` and `ask` so they match it.
-- The `delete-account`, `ask`, `request-consent` and `approve-consent` functions are deployed (the last two are the older versions and must be redeployed after the migration). Ask still needs its AI secrets: see step 6.
+- The database: the first four files in [`supabase/migrations/`](../supabase/migrations/) are applied (accounts, the daily job that erases deleted accounts, Ask's question counter). The fifth, `20261008000000_date_of_birth.sql`, replaces the birth year with a date of birth, adds the 13+ rule, the date-of-birth change rule, the parent-email rate limit and the cleanup of unfinished accounts. It is **not applied yet**: apply it through the Supabase connector (not `npx supabase db push`: see item 5 of the code to-do in [`notes/backend-status.md`](notes/backend-status.md)), then redeploy `request-consent`, `approve-consent`, `ask` and `delete-account` so they match it. **Do this before merging to `main`**: the Pages workflow publishes the app on every push to `main`, and the new app calls database functions that don't exist until the migration is applied.
+- The `delete-account`, `ask`, `request-consent` and `approve-consent` functions are deployed, but as the older versions: they read the old birth year and `delete-account` still sends through Resend. Redeploy all four after the migration. Ask still needs its AI secrets: see step 6.
 - [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml) builds the app from the GitHub secrets and publishes it to GitHub Pages on every push to `main`.
 
 ## Where the keys live (and why nothing leaks)
@@ -59,7 +59,7 @@ All the app's own emails (parent approval, account deletion) go through [Brevo](
    - `EMAIL_FROM_NAME`: optional, defaults to `Pocket Sense`
    - `EMAIL_REPLY_TO`: optional, the contact address. When set, it's shown in every email's footer and used for replies.
    - `APP_URL`: `https://wilboards.github.io/PocketSense/`
-   - You can delete the old `RESEND_API_KEY` and `EMAIL_FROM` secrets.
+   - You can delete the old `RESEND_API_KEY` and `EMAIL_FROM` secrets, but only after `delete-account` has been redeployed (it still uses them until then).
 4. Confirm-your-email and reset-password emails come from Supabase Auth itself, not from these functions. Supabase's built-in sender only mails members of your Supabase organization, a few per hour. For real users, go to Authentication → Emails → SMTP Settings and turn on custom SMTP with Brevo (host `smtp-relay.brevo.com`, port `587`; the login and the SMTP key are shown in Brevo under SMTP & API → SMTP, and the SMTP key is **not** the API key from step 1). Use the same verified sender. **The privacy policy says all these emails go through Brevo, so it is only true once this step is done.**
 
 While testing, use your own email address as the "parent".
